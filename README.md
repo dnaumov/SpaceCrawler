@@ -20,7 +20,7 @@ Current repository status:
 ## 2. Gameplay rules
 
 Prototype match rules:
-- Match duration: 60 seconds
+- Match duration: 60 seconds (initial target for prototype balancing; configurable later)
 - Competitors: 1 player build + AI-generated rivals
 - Main objective: collect the most food by the end of the timer
 - Tie-breakers (in order):
@@ -65,9 +65,9 @@ Recommended C# structure:
 ## 4. Project stages and TODOs
 
 ### Stage 1 — Rules and scope
-- [ ] Lock first playable ruleset
-- [ ] Define initial components and stat list
-- [ ] Define match objective and tie-breakers
+- [ ] Finalize first playable ruleset documented above
+- [ ] Finalize initial components and stat list
+- [ ] Finalize match objective and tie-breakers
 
 ### Stage 2 — Playable simulation core
 - [ ] Implement cell movement
