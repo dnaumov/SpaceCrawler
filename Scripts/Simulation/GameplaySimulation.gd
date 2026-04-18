@@ -17,6 +17,7 @@ var _food_spawn_cooldown: float = 0.0
 var _match_ended: bool = false
 var _competitors: Array[Dictionary] = []
 var _foods: Array[Vector2] = []
+var _final_winner: Dictionary = {}
 
 var _hud_timer: Label
 var _hud_status: Label
@@ -63,6 +64,7 @@ func _start_match() -> void:
 	_match_ended = false
 	_foods.clear()
 	_competitors.clear()
+	_final_winner = {}
 	_food_spawn_cooldown = 0.0
 	_hud_status.text = "Collect more food than rivals before time runs out."
 
@@ -206,15 +208,15 @@ func _end_match(reason: String = "") -> void:
 	_match_ended = true
 	_match_timer.stop()
 
-	var winner := _calculate_winner()
-	if winner.is_empty():
+	_final_winner = _calculate_winner()
+	if _final_winner.is_empty():
 		_hud_status.text = "Match ended. No winner."
 	else:
 		var message := "Winner: %s (food=%d, energy=%.1f, health=%.1f)" % [
-			winner["name"],
-			winner["food_collected"],
-			winner["energy"],
-			winner["health"]
+			_final_winner["name"],
+			_final_winner["food_collected"],
+			_final_winner["energy"],
+			_final_winner["health"]
 		]
 		if reason != "":
 			message += " — %s" % reason
@@ -280,7 +282,10 @@ func _setup_hud() -> void:
 
 
 func _update_hud() -> void:
-	_hud_timer.text = "Time left: %.1fs" % _match_timer.time_left
+	if _match_ended:
+		_hud_timer.text = "Time left: 0.0s"
+	else:
+		_hud_timer.text = "Time left: %.1fs" % _match_timer.time_left
 
 	var standings := _competitors.duplicate()
 	standings.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
