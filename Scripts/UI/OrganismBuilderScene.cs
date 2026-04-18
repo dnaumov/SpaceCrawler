@@ -87,6 +87,7 @@ public partial class OrganismBuilderScene : Control
 	private ComponentDropList _availableList = new();
 	private ComponentDropList _selectedList = new();
 	private Label _statusLabel = new();
+	private Label _emptyLoadoutLabel = new() { Text = "Drop components here" };
 
 	public override void _Ready()
 	{
@@ -181,18 +182,25 @@ public partial class OrganismBuilderScene : Control
 	{
 		foreach (var child in _selectedList.GetChildren())
 		{
-			child.QueueFree();
+			if (child != _emptyLoadoutLabel)
+			{
+				child.Free();
+			}
 		}
 
 		if (_selectedComponents.Count == 0)
 		{
-			_selectedList.AddChild(new Label
+			if (_emptyLoadoutLabel.GetParent() == null)
 			{
-				Text = "Drop components here"
-			});
+				_selectedList.AddChild(_emptyLoadoutLabel);
+			}
+
+			_emptyLoadoutLabel.Visible = true;
 		}
 		else
 		{
+			_emptyLoadoutLabel.Visible = false;
+
 			foreach (var component in _selectedComponents)
 			{
 				_selectedList.AddChild(new ComponentItemLabel
