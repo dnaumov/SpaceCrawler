@@ -33,6 +33,22 @@ Core design principles:
 - Builds should be diverse (no single dominant setup)
 - Combat is optional support for food control, not the only way to win
 
+Initial component set (Stage 1 baseline):
+- **Core membrane**: required base; gives base HP and energy capacity
+- **Flagella engine**: increases movement speed, increases energy drain
+- **Sensor cilia**: improves food targeting/collection range, lowers max health
+- **Mitochondria cluster**: increases max energy and food-to-energy efficiency, lowers speed
+- **Spike weapon**: adds offensive pressure for future combat interactions, increases drain
+- **Armor plate**: increases health, decreases speed
+
+Initial stat list (Stage 1 baseline):
+- **Speed**
+- **Max Energy**
+- **Energy Drain**
+- **Health**
+- **Food Collected** (match score)
+- **Collection Radius**
+
 ## 3. Recommended scenes and code structure
 
 Recommended scene layout:
@@ -65,15 +81,15 @@ Recommended C# structure:
 ## 4. Project stages and TODOs
 
 ### Stage 1 — Rules and scope
-- [ ] Finalize first playable ruleset documented above
-- [ ] Finalize initial components and stat list
-- [ ] Finalize match objective and tie-breakers
+- [x] Finalize first playable ruleset documented above
+- [x] Finalize initial components and stat list
+- [x] Finalize match objective and tie-breakers
 
 ### Stage 2 — Playable simulation core
-- [ ] Implement cell movement
-- [ ] Implement food spawn/collection
-- [ ] Implement energy drain and death conditions
-- [ ] Implement match timer and winner calculation
+- [x] Implement cell movement
+- [x] Implement food spawn/collection
+- [x] Implement energy drain and death conditions
+- [x] Implement match timer and winner calculation
 
 ### Stage 3 — Modular component system
 - [ ] Implement `CellPart` base system
