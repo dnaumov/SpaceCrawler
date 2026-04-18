@@ -12,7 +12,7 @@ public partial class OrganismBuilderScene : Control
 		{
 			if (string.IsNullOrEmpty(ComponentName) || string.IsNullOrEmpty(SourceList))
 			{
-				return Variant.CreateFrom(null);
+				return default;
 			}
 
 			var preview = new Label
