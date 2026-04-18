@@ -84,9 +84,9 @@ public partial class OrganismBuilderScene : Control
 
 	private readonly List<string> _selectedComponents = [];
 
-	private ComponentDropList _availableList = default!;
-	private ComponentDropList _selectedList = default!;
-	private Label _statusLabel = default!;
+	private ComponentDropList _availableList = new();
+	private ComponentDropList _selectedList = new();
+	private Label _statusLabel = new();
 
 	public override void _Ready()
 	{
@@ -97,20 +97,20 @@ public partial class OrganismBuilderScene : Control
 
 	private void BuildUi()
 	{
-		var margin = new MarginContainer();
-		margin.SetAnchorsPreset(LayoutPreset.FullRect);
-		margin.AddThemeConstantOverride("margin_left", 16);
-		margin.AddThemeConstantOverride("margin_top", 16);
-		margin.AddThemeConstantOverride("margin_right", 16);
-		margin.AddThemeConstantOverride("margin_bottom", 16);
-		AddChild(margin);
+		var marginContainer = new MarginContainer();
+		marginContainer.SetAnchorsPreset(LayoutPreset.FullRect);
+		marginContainer.AddThemeConstantOverride("margin_left", 16);
+		marginContainer.AddThemeConstantOverride("margin_top", 16);
+		marginContainer.AddThemeConstantOverride("margin_right", 16);
+		marginContainer.AddThemeConstantOverride("margin_bottom", 16);
+		AddChild(marginContainer);
 
 		var rootColumn = new VBoxContainer
 		{
 			SizeFlagsHorizontal = SizeFlags.ExpandFill,
 			SizeFlagsVertical = SizeFlags.ExpandFill
 		};
-		margin.AddChild(rootColumn);
+		marginContainer.AddChild(rootColumn);
 
 		rootColumn.AddChild(new Label
 		{
@@ -141,12 +141,9 @@ public partial class OrganismBuilderScene : Control
 		availablePanel.AddChild(availableColumn);
 		availableColumn.AddChild(new Label { Text = "Available components" });
 
-		_availableList = new ComponentDropList
-		{
-			AcceptedSource = "selected",
-			SizeFlagsHorizontal = SizeFlags.ExpandFill,
-			SizeFlagsVertical = SizeFlags.ExpandFill
-		};
+		_availableList.AcceptedSource = "selected";
+		_availableList.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+		_availableList.SizeFlagsVertical = SizeFlags.ExpandFill;
 		_availableList.ComponentDropped += OnComponentDroppedToAvailable;
 		availableColumn.AddChild(_availableList);
 
@@ -171,16 +168,12 @@ public partial class OrganismBuilderScene : Control
 		selectedPanel.AddChild(selectedColumn);
 		selectedColumn.AddChild(new Label { Text = "Organism loadout" });
 
-		_selectedList = new ComponentDropList
-		{
-			AcceptedSource = "available",
-			SizeFlagsHorizontal = SizeFlags.ExpandFill,
-			SizeFlagsVertical = SizeFlags.ExpandFill
-		};
+		_selectedList.AcceptedSource = "available";
+		_selectedList.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+		_selectedList.SizeFlagsVertical = SizeFlags.ExpandFill;
 		_selectedList.ComponentDropped += OnComponentDroppedToLoadout;
 		selectedColumn.AddChild(_selectedList);
 
-		_statusLabel = new Label();
 		rootColumn.AddChild(_statusLabel);
 	}
 
