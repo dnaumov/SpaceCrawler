@@ -159,8 +159,9 @@ func _get_ai_direction(competitor: Dictionary, delta: float) -> Vector2:
 
 
 func _collect_food(competitor: Dictionary) -> void:
+	var collection_radius_squared := collection_radius * collection_radius
 	for i in range(_foods.size() - 1, -1, -1):
-		if competitor["position"].distance_to(_foods[i]) <= collection_radius:
+		if competitor["position"].distance_squared_to(_foods[i]) <= collection_radius_squared:
 			_foods.remove_at(i)
 			competitor["food_collected"] += 1
 			competitor["energy"] = min(competitor["max_energy"], competitor["energy"] + food_energy_value)
