@@ -117,11 +117,11 @@ public partial class GameplaySimulation : Node2D
 			IsPlayer = true,
 			Position = ArenaSize * 0.5f,
 			Speed = 220.0f,
-			Energy = 100.0f,
 			MaxEnergy = 100.0f,
+			Energy = 100.0f,
 			EnergyDrain = 4.5f,
-			Health = 100.0f,
 			MaxHealth = 100.0f,
+			Health = 100.0f,
 			FoodCollected = 0,
 			Alive = true,
 			Color = new Color(0.35f, 0.75f, 1.0f),
@@ -328,10 +328,6 @@ public partial class GameplaySimulation : Node2D
 		var healthTied = energyTied
 			.Where(c => Mathf.IsEqualApprox(c.Health, maxHealth))
 			.ToList();
-		if (healthTied.Count == 0)
-		{
-			return null;
-		}
 		if (healthTied.Count == 1)
 		{
 			return healthTied[0];
