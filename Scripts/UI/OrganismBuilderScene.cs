@@ -183,7 +183,6 @@ public partial class OrganismBuilderScene : Control
 	];
 
 	private readonly string?[] _gridComponents = new string?[GridNodeCount];
-	private readonly Dictionary<string, int> _componentNodeLookup = [];
 	private readonly List<GridNodeSlot> _gridSlots = [];
 
 	private VBoxContainer _availableList = new();
@@ -305,25 +304,39 @@ public partial class OrganismBuilderScene : Control
 
 	private void RefreshGridState()
 	{
-		_componentNodeLookup.Clear();
+		var placedCount = 0;
 		for (var nodeIndex = 0; nodeIndex < GridNodeCount; nodeIndex++)
 		{
 			var component = _gridComponents[nodeIndex];
 			_gridSlots[nodeIndex].SetComponent(component);
 			if (!string.IsNullOrEmpty(component))
 			{
-				_componentNodeLookup[component] = nodeIndex;
+				placedCount += 1;
 			}
 		}
 
-		_statusLabel.Text = $"Placed components: {_componentNodeLookup.Count}/{GridNodeCount}";
+		_statusLabel.Text = $"Placed components: {placedCount}/{GridNodeCount}";
+	}
+
+	private int FindComponentNode(string componentName)
+	{
+		for (var nodeIndex = 0; nodeIndex < GridNodeCount; nodeIndex++)
+		{
+			if (_gridComponents[nodeIndex] == componentName)
+			{
+				return nodeIndex;
+			}
+		}
+
+		return -1;
 	}
 
 	private void OnComponentDroppedToGridNode(int targetNodeIndex, string componentName, string sourceList, int sourceNodeIndex)
 	{
 		if (sourceList == "available")
 		{
-			if (_componentNodeLookup.TryGetValue(componentName, out var currentNodeIndex))
+			var currentNodeIndex = FindComponentNode(componentName);
+			if (currentNodeIndex >= 0)
 			{
 				if (currentNodeIndex == targetNodeIndex)
 				{
