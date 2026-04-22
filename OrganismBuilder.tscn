@@ -1,6 +1,9 @@
-[gd_scene load_steps=2 format=3 uid="uid://bc0tr8hjsg7we"]
+[gd_scene load_steps=5 format=3 uid="uid://bc0tr8hjsg7we"]
 
 [ext_resource type="Script" path="res://Scripts/UI/OrganismBuilderScene.cs" id="1_0ov1x"]
+[ext_resource type="Script" path="res://Scripts/UI/ComponentItemLabel.cs" id="2_sesxl"]
+[ext_resource type="Script" path="res://Scripts/UI/RemoveDropZone.cs" id="3_qp0x5"]
+[ext_resource type="Script" path="res://Scripts/UI/GridNodeSlot.cs" id="4_if2cu"]
 
 [node name="OrganismBuilder" type="Control"]
 layout_mode = 3
@@ -10,3 +13,310 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_0ov1x")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="RootColumn" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="TitleLabel" type="Label" parent="MarginContainer/RootColumn"]
+layout_mode = 2
+text = "Organism Builder"
+horizontal_alignment = 1
+
+[node name="SubtitleLabel" type="Label" parent="MarginContainer/RootColumn"]
+layout_mode = 2
+text = "Drag components from Available components into the 4x4 cell grid."
+
+[node name="Split" type="HSplitContainer" parent="MarginContainer/RootColumn"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="AvailablePanel" type="PanelContainer" parent="MarginContainer/RootColumn/Split"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="AvailableColumn" type="VBoxContainer" parent="MarginContainer/RootColumn/Split/AvailablePanel"]
+layout_mode = 2
+
+[node name="AvailableTitle" type="Label" parent="MarginContainer/RootColumn/Split/AvailablePanel/AvailableColumn"]
+layout_mode = 2
+text = "Available components"
+
+[node name="AvailableList" type="VBoxContainer" parent="MarginContainer/RootColumn/Split/AvailablePanel/AvailableColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="CoreMembrane" type="Label" parent="MarginContainer/RootColumn/Split/AvailablePanel/AvailableColumn/AvailableList"]
+layout_mode = 2
+text = "Core membrane"
+script = ExtResource("2_sesxl")
+
+[node name="FlagellaEngine" type="Label" parent="MarginContainer/RootColumn/Split/AvailablePanel/AvailableColumn/AvailableList"]
+layout_mode = 2
+text = "Flagella engine"
+script = ExtResource("2_sesxl")
+
+[node name="SensorCilia" type="Label" parent="MarginContainer/RootColumn/Split/AvailablePanel/AvailableColumn/AvailableList"]
+layout_mode = 2
+text = "Sensor cilia"
+script = ExtResource("2_sesxl")
+
+[node name="MitochondriaCluster" type="Label" parent="MarginContainer/RootColumn/Split/AvailablePanel/AvailableColumn/AvailableList"]
+layout_mode = 2
+text = "Mitochondria cluster"
+script = ExtResource("2_sesxl")
+
+[node name="SpikeWeapon" type="Label" parent="MarginContainer/RootColumn/Split/AvailablePanel/AvailableColumn/AvailableList"]
+layout_mode = 2
+text = "Spike weapon"
+script = ExtResource("2_sesxl")
+
+[node name="ArmorPlate" type="Label" parent="MarginContainer/RootColumn/Split/AvailablePanel/AvailableColumn/AvailableList"]
+layout_mode = 2
+text = "Armor plate"
+script = ExtResource("2_sesxl")
+
+[node name="RemoveDropZone" type="PanelContainer" parent="MarginContainer/RootColumn/Split/AvailablePanel/AvailableColumn"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+script = ExtResource("3_qp0x5")
+
+[node name="RemoveLabel" type="Label" parent="MarginContainer/RootColumn/Split/AvailablePanel/AvailableColumn/RemoveDropZone"]
+layout_mode = 2
+text = "Drop here to remove from grid"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="GridPanel" type="PanelContainer" parent="MarginContainer/RootColumn/Split"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="GridColumn" type="VBoxContainer" parent="MarginContainer/RootColumn/Split/GridPanel"]
+layout_mode = 2
+
+[node name="GridTitle" type="Label" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn"]
+layout_mode = 2
+text = "Cell layout grid (4x4)"
+
+[node name="BuilderGrid" type="GridContainer" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+columns = 4
+
+[node name="Node01" type="PanelContainer" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid"]
+layout_mode = 2
+script = ExtResource("4_if2cu")
+NodeIndex = 0
+
+[node name="ContentLabel" type="Label" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid/Node01"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Node02" type="PanelContainer" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid"]
+layout_mode = 2
+script = ExtResource("4_if2cu")
+NodeIndex = 1
+
+[node name="ContentLabel" type="Label" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid/Node02"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Node03" type="PanelContainer" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid"]
+layout_mode = 2
+script = ExtResource("4_if2cu")
+NodeIndex = 2
+
+[node name="ContentLabel" type="Label" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid/Node03"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Node04" type="PanelContainer" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid"]
+layout_mode = 2
+script = ExtResource("4_if2cu")
+NodeIndex = 3
+
+[node name="ContentLabel" type="Label" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid/Node04"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Node05" type="PanelContainer" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid"]
+layout_mode = 2
+script = ExtResource("4_if2cu")
+NodeIndex = 4
+
+[node name="ContentLabel" type="Label" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid/Node05"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Node06" type="PanelContainer" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid"]
+layout_mode = 2
+script = ExtResource("4_if2cu")
+NodeIndex = 5
+
+[node name="ContentLabel" type="Label" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid/Node06"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Node07" type="PanelContainer" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid"]
+layout_mode = 2
+script = ExtResource("4_if2cu")
+NodeIndex = 6
+
+[node name="ContentLabel" type="Label" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid/Node07"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Node08" type="PanelContainer" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid"]
+layout_mode = 2
+script = ExtResource("4_if2cu")
+NodeIndex = 7
+
+[node name="ContentLabel" type="Label" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid/Node08"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Node09" type="PanelContainer" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid"]
+layout_mode = 2
+script = ExtResource("4_if2cu")
+NodeIndex = 8
+
+[node name="ContentLabel" type="Label" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid/Node09"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Node10" type="PanelContainer" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid"]
+layout_mode = 2
+script = ExtResource("4_if2cu")
+NodeIndex = 9
+
+[node name="ContentLabel" type="Label" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid/Node10"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Node11" type="PanelContainer" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid"]
+layout_mode = 2
+script = ExtResource("4_if2cu")
+NodeIndex = 10
+
+[node name="ContentLabel" type="Label" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid/Node11"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Node12" type="PanelContainer" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid"]
+layout_mode = 2
+script = ExtResource("4_if2cu")
+NodeIndex = 11
+
+[node name="ContentLabel" type="Label" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid/Node12"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Node13" type="PanelContainer" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid"]
+layout_mode = 2
+script = ExtResource("4_if2cu")
+NodeIndex = 12
+
+[node name="ContentLabel" type="Label" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid/Node13"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Node14" type="PanelContainer" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid"]
+layout_mode = 2
+script = ExtResource("4_if2cu")
+NodeIndex = 13
+
+[node name="ContentLabel" type="Label" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid/Node14"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Node15" type="PanelContainer" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid"]
+layout_mode = 2
+script = ExtResource("4_if2cu")
+NodeIndex = 14
+
+[node name="ContentLabel" type="Label" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid/Node15"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Node16" type="PanelContainer" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid"]
+layout_mode = 2
+script = ExtResource("4_if2cu")
+NodeIndex = 15
+
+[node name="ContentLabel" type="Label" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid/Node16"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="StatusLabel" type="Label" parent="MarginContainer/RootColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Placed components: 0/16"
