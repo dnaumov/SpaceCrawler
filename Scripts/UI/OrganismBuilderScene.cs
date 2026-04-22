@@ -60,6 +60,9 @@ public partial class OrganismBuilderScene : Control
 
 	private sealed partial class GridNodeSlot : PanelContainer
 	{
+		private const float SlotMinWidth = 120.0f;
+		private const float SlotMinHeight = 84.0f;
+
 		[Signal]
 		public delegate void ComponentDroppedEventHandler(int targetNodeIndex, string componentName, string sourceList, int sourceNodeIndex);
 
@@ -75,7 +78,7 @@ public partial class OrganismBuilderScene : Control
 
 		public override void _Ready()
 		{
-			CustomMinimumSize = new Vector2(120.0f, 84.0f);
+			CustomMinimumSize = new Vector2(SlotMinWidth, SlotMinHeight);
 			var center = new CenterContainer();
 			center.SizeFlagsHorizontal = SizeFlags.ExpandFill;
 			center.SizeFlagsVertical = SizeFlags.ExpandFill;
@@ -141,6 +144,7 @@ public partial class OrganismBuilderScene : Control
 
 	private const int GridSize = 4;
 	private const int GridNodeCount = GridSize * GridSize;
+	private const float RemoveDropZoneMinHeight = 48.0f;
 
 	private static bool TryReadDropData(Variant data, out string componentName, out string sourceList, out int sourceNodeIndex)
 	{
@@ -254,7 +258,7 @@ public partial class OrganismBuilderScene : Control
 			});
 		}
 
-		_removeDropZone.CustomMinimumSize = new Vector2(0.0f, 48.0f);
+		_removeDropZone.CustomMinimumSize = new Vector2(0.0f, RemoveDropZoneMinHeight);
 		_removeDropZone.ComponentRemoved += OnComponentRemovedFromGrid;
 		availableColumn.AddChild(_removeDropZone);
 		_removeDropZone.AddChild(new Label
@@ -342,6 +346,7 @@ public partial class OrganismBuilderScene : Control
 
 		if (sourceNodeIndex == targetNodeIndex)
 		{
+			_statusLabel.Text = $"{componentName} is already on node {targetNodeIndex + 1}.";
 			return;
 		}
 
