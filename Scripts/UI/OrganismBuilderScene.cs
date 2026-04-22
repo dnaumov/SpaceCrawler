@@ -3,6 +3,13 @@ using Godot;
 
 public partial class OrganismBuilderScene : Control
 {
+	private static class DragPayload
+	{
+		public const string ComponentKey = "component";
+		public const string SourceKey = "source";
+		public const string SourceNodeKey = "source_node";
+	}
+
 	private sealed partial class ComponentItemLabel : Label
 	{
 		public string ComponentName { get; set; } = string.Empty;
@@ -23,53 +30,146 @@ public partial class OrganismBuilderScene : Control
 
 			return new Godot.Collections.Dictionary
 			{
-				{ "component", ComponentName },
-				{ "source", SourceList }
+				{ DragPayload.ComponentKey, ComponentName },
+				{ DragPayload.SourceKey, SourceList },
+				{ DragPayload.SourceNodeKey, -1 }
 			};
 		}
 	}
 
-	private sealed partial class ComponentDropList : VBoxContainer
+	private sealed partial class RemoveDropZone : PanelContainer
 	{
 		[Signal]
-		public delegate void ComponentDroppedEventHandler(string componentName, string sourceList);
-
-		public string AcceptedSource { get; set; } = string.Empty;
+		public delegate void ComponentRemovedEventHandler(string componentName, string sourceList, int sourceNodeIndex);
 
 		public override bool _CanDropData(Vector2 atPosition, Variant data)
 		{
-			return TryReadDropData(data, out _, out var sourceList) && sourceList == AcceptedSource;
+			return TryReadDropData(data, out _, out var sourceList, out _) && sourceList == "grid";
 		}
 
 		public override void _DropData(Vector2 atPosition, Variant data)
 		{
-			if (!TryReadDropData(data, out var componentName, out var sourceList))
+			if (!TryReadDropData(data, out var componentName, out var sourceList, out var sourceNodeIndex))
 			{
 				return;
 			}
 
-			EmitSignal(SignalName.ComponentDropped, componentName, sourceList);
+			EmitSignal(SignalName.ComponentRemoved, componentName, sourceList, sourceNodeIndex);
 		}
+	}
 
-		private static bool TryReadDropData(Variant data, out string componentName, out string sourceList)
+	private sealed partial class GridNodeSlot : PanelContainer
+	{
+		private const float SlotMinWidth = 120.0f;
+		private const float SlotMinHeight = 84.0f;
+
+		[Signal]
+		public delegate void ComponentDroppedEventHandler(int targetNodeIndex, string componentName, string sourceList, int sourceNodeIndex);
+
+		public int NodeIndex { get; set; } = -1;
+
+		private string _componentName = string.Empty;
+		private readonly Label _contentLabel = new()
 		{
-			componentName = string.Empty;
-			sourceList = string.Empty;
-			if (data.VariantType != Variant.Type.Dictionary)
-			{
-				return false;
-			}
+			HorizontalAlignment = HorizontalAlignment.Center,
+			VerticalAlignment = VerticalAlignment.Center,
+			AutowrapMode = TextServer.AutowrapMode.WordSmart
+		};
 
-			var dictionary = data.AsGodotDictionary();
-			if (!dictionary.ContainsKey("component") || !dictionary.ContainsKey("source"))
-			{
-				return false;
-			}
+		public override void _Ready()
+		{
+			CustomMinimumSize = new Vector2(SlotMinWidth, SlotMinHeight);
+			var center = new CenterContainer();
+			center.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+			center.SizeFlagsVertical = SizeFlags.ExpandFill;
+			AddChild(center);
 
-			componentName = dictionary["component"].AsString();
-			sourceList = dictionary["source"].AsString();
-			return !string.IsNullOrEmpty(componentName) && !string.IsNullOrEmpty(sourceList);
+			_contentLabel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+			_contentLabel.SizeFlagsVertical = SizeFlags.ExpandFill;
+			center.AddChild(_contentLabel);
+			UpdateLabel();
 		}
+
+		public void SetComponent(string? componentName)
+		{
+			_componentName = componentName ?? string.Empty;
+			UpdateLabel();
+		}
+
+		public override Variant _GetDragData(Vector2 atPosition)
+		{
+			if (string.IsNullOrEmpty(_componentName))
+			{
+				return default;
+			}
+
+			var preview = new Label
+			{
+				Text = _componentName
+			};
+			SetDragPreview(preview);
+
+			return new Godot.Collections.Dictionary
+			{
+				{ DragPayload.ComponentKey, _componentName },
+				{ DragPayload.SourceKey, "grid" },
+				{ DragPayload.SourceNodeKey, NodeIndex }
+			};
+		}
+
+		public override bool _CanDropData(Vector2 atPosition, Variant data)
+		{
+			return TryReadDropData(data, out _, out var sourceList, out _)
+				&& (sourceList == "available" || sourceList == "grid");
+		}
+
+		public override void _DropData(Vector2 atPosition, Variant data)
+		{
+			if (!TryReadDropData(data, out var componentName, out var sourceList, out var sourceNodeIndex))
+			{
+				return;
+			}
+
+			EmitSignal(SignalName.ComponentDropped, NodeIndex, componentName, sourceList, sourceNodeIndex);
+		}
+
+		private void UpdateLabel()
+		{
+			var nodeText = $"Node {NodeIndex + 1}";
+			_contentLabel.Text = string.IsNullOrEmpty(_componentName)
+				? $"{nodeText}\n(Empty)"
+				: $"{nodeText}\n{_componentName}";
+		}
+	}
+
+	private const int GridSize = 4;
+	private const int GridNodeCount = GridSize * GridSize;
+	private const float RemoveDropZoneMinHeight = 48.0f;
+
+	private static bool TryReadDropData(Variant data, out string componentName, out string sourceList, out int sourceNodeIndex)
+	{
+		componentName = string.Empty;
+		sourceList = string.Empty;
+		sourceNodeIndex = -1;
+		if (data.VariantType != Variant.Type.Dictionary)
+		{
+			return false;
+		}
+
+		var dictionary = data.AsGodotDictionary();
+		if (!dictionary.ContainsKey(DragPayload.ComponentKey) || !dictionary.ContainsKey(DragPayload.SourceKey))
+		{
+			return false;
+		}
+
+		componentName = dictionary[DragPayload.ComponentKey].AsString();
+		sourceList = dictionary[DragPayload.SourceKey].AsString();
+		if (dictionary.ContainsKey(DragPayload.SourceNodeKey))
+		{
+			sourceNodeIndex = dictionary[DragPayload.SourceNodeKey].AsInt32();
+		}
+
+		return !string.IsNullOrEmpty(componentName) && !string.IsNullOrEmpty(sourceList);
 	}
 
 	private readonly string[] _availableComponents =
@@ -82,18 +182,18 @@ public partial class OrganismBuilderScene : Control
 		"Armor plate"
 	];
 
-	private readonly List<string> _selectedComponents = [];
+	private readonly string?[] _gridComponents = new string?[GridNodeCount];
+	private readonly List<GridNodeSlot> _gridSlots = [];
 
-	private ComponentDropList _availableList = new();
-	private ComponentDropList _selectedList = new();
+	private VBoxContainer _availableList = new();
+	private RemoveDropZone _removeDropZone = new();
 	private Label _statusLabel = new();
-	private Label _emptyLoadoutLabel = new() { Text = "Drop components here" };
 
 	public override void _Ready()
 	{
 		SetAnchorsPreset(LayoutPreset.FullRect);
 		BuildUi();
-		RefreshSelectedList();
+		RefreshGridState();
 	}
 
 	private void BuildUi()
@@ -121,7 +221,7 @@ public partial class OrganismBuilderScene : Control
 
 		rootColumn.AddChild(new Label
 		{
-			Text = "Drag components from Available to Loadout. Drag from Loadout back to Available to remove."
+			Text = "Drag components from Available components into the 4x4 cell grid."
 		});
 
 		var split = new HSplitContainer
@@ -142,10 +242,9 @@ public partial class OrganismBuilderScene : Control
 		availablePanel.AddChild(availableColumn);
 		availableColumn.AddChild(new Label { Text = "Available components" });
 
-		_availableList.AcceptedSource = "selected";
+		_availableList = new VBoxContainer();
 		_availableList.SizeFlagsHorizontal = SizeFlags.ExpandFill;
 		_availableList.SizeFlagsVertical = SizeFlags.ExpandFill;
-		_availableList.ComponentDropped += OnComponentDroppedToAvailable;
 		availableColumn.AddChild(_availableList);
 
 		foreach (var component in _availableComponents)
@@ -158,90 +257,136 @@ public partial class OrganismBuilderScene : Control
 			});
 		}
 
-		var selectedPanel = new PanelContainer
+		_removeDropZone.CustomMinimumSize = new Vector2(0.0f, RemoveDropZoneMinHeight);
+		_removeDropZone.ComponentRemoved += OnComponentRemovedFromGrid;
+		availableColumn.AddChild(_removeDropZone);
+		_removeDropZone.AddChild(new Label
+		{
+			Text = "Drop here to remove from grid",
+			HorizontalAlignment = HorizontalAlignment.Center,
+			VerticalAlignment = VerticalAlignment.Center
+		});
+
+		var gridPanel = new PanelContainer
 		{
 			SizeFlagsHorizontal = SizeFlags.ExpandFill,
 			SizeFlagsVertical = SizeFlags.ExpandFill
 		};
-		split.AddChild(selectedPanel);
+		split.AddChild(gridPanel);
 
-		var selectedColumn = new VBoxContainer();
-		selectedPanel.AddChild(selectedColumn);
-		selectedColumn.AddChild(new Label { Text = "Organism loadout" });
+		var gridColumn = new VBoxContainer();
+		gridPanel.AddChild(gridColumn);
+		gridColumn.AddChild(new Label { Text = "Cell layout grid (4x4)" });
 
-		_selectedList.AcceptedSource = "available";
-		_selectedList.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-		_selectedList.SizeFlagsVertical = SizeFlags.ExpandFill;
-		_selectedList.ComponentDropped += OnComponentDroppedToLoadout;
-		selectedColumn.AddChild(_selectedList);
+		var gridContainer = new GridContainer
+		{
+			Columns = GridSize,
+			SizeFlagsHorizontal = SizeFlags.ExpandFill,
+			SizeFlagsVertical = SizeFlags.ExpandFill
+		};
+		gridColumn.AddChild(gridContainer);
+
+		for (var nodeIndex = 0; nodeIndex < GridNodeCount; nodeIndex++)
+		{
+			var slot = new GridNodeSlot
+			{
+				NodeIndex = nodeIndex,
+				SizeFlagsHorizontal = SizeFlags.ExpandFill,
+				SizeFlagsVertical = SizeFlags.ExpandFill
+			};
+			slot.ComponentDropped += OnComponentDroppedToGridNode;
+			_gridSlots.Add(slot);
+			gridContainer.AddChild(slot);
+		}
 
 		rootColumn.AddChild(_statusLabel);
 	}
 
-	private void RefreshSelectedList()
+	private void RefreshGridState()
 	{
-		foreach (var child in _selectedList.GetChildren())
+		var placedCount = 0;
+		for (var nodeIndex = 0; nodeIndex < GridNodeCount; nodeIndex++)
 		{
-			if (child != _emptyLoadoutLabel)
+			var component = _gridComponents[nodeIndex];
+			_gridSlots[nodeIndex].SetComponent(component);
+			if (!string.IsNullOrEmpty(component))
 			{
-				child.Free();
+				placedCount += 1;
 			}
 		}
 
-		if (_selectedComponents.Count == 0)
+		_statusLabel.Text = $"Placed components: {placedCount}/{GridNodeCount}";
+	}
+
+	private int FindComponentNode(string componentName)
+	{
+		for (var nodeIndex = 0; nodeIndex < GridNodeCount; nodeIndex++)
 		{
-			if (_emptyLoadoutLabel.GetParent() == null)
+			if (_gridComponents[nodeIndex] == componentName)
 			{
-				_selectedList.AddChild(_emptyLoadoutLabel);
+				return nodeIndex;
 			}
-
-			_emptyLoadoutLabel.Visible = true;
 		}
-		else
-		{
-			_emptyLoadoutLabel.Visible = false;
 
-			foreach (var component in _selectedComponents)
+		return -1;
+	}
+
+	private void OnComponentDroppedToGridNode(int targetNodeIndex, string componentName, string sourceList, int sourceNodeIndex)
+	{
+		if (sourceList == "available")
+		{
+			var currentNodeIndex = FindComponentNode(componentName);
+			if (currentNodeIndex >= 0)
 			{
-				_selectedList.AddChild(new ComponentItemLabel
+				if (currentNodeIndex == targetNodeIndex)
 				{
-					Text = component,
-					ComponentName = component,
-					SourceList = "selected"
-				});
+					_statusLabel.Text = $"{componentName} is already on node {targetNodeIndex + 1}.";
+					return;
+				}
+
+				_gridComponents[currentNodeIndex] = null;
 			}
+
+			_gridComponents[targetNodeIndex] = componentName;
+			RefreshGridState();
+			return;
 		}
 
-		_statusLabel.Text = $"Selected components: {_selectedComponents.Count}";
+		if (sourceList != "grid" || sourceNodeIndex < 0 || sourceNodeIndex >= GridNodeCount)
+		{
+			return;
+		}
+
+		if (sourceNodeIndex == targetNodeIndex)
+		{
+			_statusLabel.Text = $"{componentName} is already on node {targetNodeIndex + 1}.";
+			return;
+		}
+
+		if (_gridComponents[sourceNodeIndex] != componentName)
+		{
+			return;
+		}
+
+		var targetComponent = _gridComponents[targetNodeIndex];
+		_gridComponents[targetNodeIndex] = componentName;
+		_gridComponents[sourceNodeIndex] = targetComponent;
+		RefreshGridState();
 	}
 
-	private void OnComponentDroppedToLoadout(string componentName, string sourceList)
+	private void OnComponentRemovedFromGrid(string componentName, string sourceList, int sourceNodeIndex)
 	{
-		if (sourceList != "available")
+		if (sourceList != "grid" || sourceNodeIndex < 0 || sourceNodeIndex >= GridNodeCount)
 		{
 			return;
 		}
 
-		if (_selectedComponents.Contains(componentName))
-		{
-			_statusLabel.Text = $"{componentName} is already in the loadout.";
-			return;
-		}
-
-		_selectedComponents.Add(componentName);
-		RefreshSelectedList();
-	}
-
-	private void OnComponentDroppedToAvailable(string componentName, string sourceList)
-	{
-		if (sourceList != "selected")
+		if (_gridComponents[sourceNodeIndex] != componentName)
 		{
 			return;
 		}
 
-		if (_selectedComponents.Remove(componentName))
-		{
-			RefreshSelectedList();
-		}
+		_gridComponents[sourceNodeIndex] = null;
+		RefreshGridState();
 	}
 }
