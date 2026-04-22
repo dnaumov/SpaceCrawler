@@ -89,7 +89,7 @@ public partial class OrganismBuilderScene : Control
 
 		public void SetComponent(string? componentName)
 		{
-			_componentName = componentName;
+			_componentName = componentName ?? string.Empty;
 			UpdateLabel();
 		}
 
@@ -327,7 +327,7 @@ public partial class OrganismBuilderScene : Control
 					return;
 				}
 
-				_gridComponents[currentNodeIndex] = string.Empty;
+				_gridComponents[currentNodeIndex] = null;
 			}
 
 			_gridComponents[targetNodeIndex] = componentName;
@@ -368,7 +368,7 @@ public partial class OrganismBuilderScene : Control
 			return;
 		}
 
-		_gridComponents[sourceNodeIndex] = string.Empty;
+		_gridComponents[sourceNodeIndex] = null;
 		RefreshGridState();
 	}
 }
