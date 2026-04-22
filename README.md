@@ -41,7 +41,7 @@ Initial non-combat component set (Stage 1 baseline):
 - **Armor plate**: increases health, decreases speed
 
 Detailed categorized element list:
-- See `/home/runner/work/SpaceCrawler/SpaceCrawler/CELL_ELEMENTS.md` (Movement, Sensors, Energy, Auxiliary)
+- See [`CELL_ELEMENTS.md`](CELL_ELEMENTS.md) (Movement, Sensors, Energy, Auxiliary)
 
 Initial stat list (Stage 1 baseline):
 - **Speed**
