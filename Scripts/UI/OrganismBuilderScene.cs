@@ -3,139 +3,165 @@ using Godot;
 
 public partial class OrganismBuilderScene : Control
 {
-private const int GridSize = 4;
-private const int GridNodeCount = GridSize * GridSize;
+	private const int GridSize = 4;
+	private const int GridNodeCount = GridSize * GridSize;
 
-private readonly string[] _gridComponents = new string[GridNodeCount];
-private readonly List<GridNodeSlot> _gridSlots = [];
+	private readonly string[] _gridComponents = new string[GridNodeCount];
+	private readonly List<GridNodeSlot> _gridSlots = [];
 
-private GridContainer _gridContainer = null!;
-private RemoveDropZone _removeDropZone = null!;
-private Label _statusLabel = null!;
+	private GridContainer _gridContainer = null!;
+	private RemoveDropZone _removeDropZone = null!;
+	private Label _statusLabel = null!;
 
-public override void _Ready()
-{
-BindUiNodes();
-BindGridSlots();
-_removeDropZone.ComponentRemoved += OnComponentRemovedFromGrid;
-RefreshGridState();
-}
+	public override void _Ready()
+	{
+		BindUiNodes();
+		BindGridSlots();
+		_removeDropZone.ComponentRemoved += OnComponentRemovedFromGrid;
+		RefreshGridState();
+	}
 
-private void BindUiNodes()
-{
-_gridContainer = GetNode<GridContainer>("%BuilderGrid");
-_removeDropZone = GetNode<RemoveDropZone>("%RemoveDropZone");
-_statusLabel = GetNode<Label>("%StatusLabel");
-}
+	private void BindUiNodes()
+	{
+		_gridContainer = GetNode<GridContainer>("%BuilderGrid");
+		_removeDropZone = GetNode<RemoveDropZone>("%RemoveDropZone");
+		_statusLabel = GetNode<Label>("%StatusLabel");
+	}
 
-private void BindGridSlots()
-{
-_gridSlots.Clear();
-foreach (var child in _gridContainer.GetChildren())
-{
-if (child is not GridNodeSlot slot)
-{
-continue;
-}
+	private void BindGridSlots()
+	{
+		_gridSlots.Clear();
+		var indexedSlots = new GridNodeSlot[GridNodeCount];
+		foreach (var child in _gridContainer.GetChildren())
+		{
+			if (child is not GridNodeSlot slot)
+			{
+				continue;
+			}
 
-slot.ComponentDropped += OnComponentDroppedToGridNode;
-_gridSlots.Add(slot);
-}
-}
+			if (slot.NodeIndex < 0 || slot.NodeIndex >= GridNodeCount)
+			{
+				GD.PushWarning($"GridNodeSlot '{slot.Name}' has invalid NodeIndex {slot.NodeIndex}.");
+				continue;
+			}
 
-private void RefreshGridState()
-{
-var placedCount = 0;
-for (var nodeIndex = 0; nodeIndex < GridNodeCount; nodeIndex++)
-{
-var component = _gridComponents[nodeIndex];
-if (nodeIndex < _gridSlots.Count)
-{
-_gridSlots[nodeIndex].SetComponent(component);
-}
-if (!string.IsNullOrEmpty(component))
-{
-placedCount += 1;
-}
-}
+			if (indexedSlots[slot.NodeIndex] is not null)
+			{
+				GD.PushWarning($"Duplicate GridNodeSlot for NodeIndex {slot.NodeIndex}: '{slot.Name}'.");
+				continue;
+			}
 
-_statusLabel.Text = $"Placed components: {placedCount}/{GridNodeCount}";
-}
+			slot.ComponentDropped += OnComponentDroppedToGridNode;
+			indexedSlots[slot.NodeIndex] = slot;
+		}
 
-private int FindComponentNode(string componentName)
-{
-for (var nodeIndex = 0; nodeIndex < GridNodeCount; nodeIndex++)
-{
-if (_gridComponents[nodeIndex] == componentName)
-{
-return nodeIndex;
-}
-}
+		for (var nodeIndex = 0; nodeIndex < GridNodeCount; nodeIndex++)
+		{
+			var slot = indexedSlots[nodeIndex];
+			if (slot is null)
+			{
+				GD.PushWarning($"Missing GridNodeSlot for NodeIndex {nodeIndex}.");
+				continue;
+			}
 
-return -1;
-}
+			_gridSlots.Add(slot);
+		}
+	}
 
-private void OnComponentDroppedToGridNode(int targetNodeIndex, string componentName, string sourceList, int sourceNodeIndex)
-{
-if (targetNodeIndex < 0 || targetNodeIndex >= GridNodeCount)
-{
-return;
-}
+	private void RefreshGridState()
+	{
+		var placedCount = 0;
+		for (var nodeIndex = 0; nodeIndex < GridNodeCount; nodeIndex++)
+		{
+			var component = _gridComponents[nodeIndex];
+			if (nodeIndex < _gridSlots.Count)
+			{
+				_gridSlots[nodeIndex].SetComponent(component);
+			}
 
-if (sourceList == "available")
-{
-var currentNodeIndex = FindComponentNode(componentName);
-if (currentNodeIndex >= 0)
-{
-if (currentNodeIndex == targetNodeIndex)
-{
-_statusLabel.Text = $"{componentName} is already on node {targetNodeIndex + 1}.";
-return;
-}
+			if (!string.IsNullOrEmpty(component))
+			{
+				placedCount += 1;
+			}
+		}
 
-_gridComponents[currentNodeIndex] = string.Empty;
-}
+		_statusLabel.Text = $"Placed components: {placedCount}/{GridNodeCount}";
+	}
 
-_gridComponents[targetNodeIndex] = componentName;
-RefreshGridState();
-return;
-}
+	private int FindComponentNode(string componentName)
+	{
+		for (var nodeIndex = 0; nodeIndex < GridNodeCount; nodeIndex++)
+		{
+			if (_gridComponents[nodeIndex] == componentName)
+			{
+				return nodeIndex;
+			}
+		}
 
-if (sourceList != "grid" || sourceNodeIndex < 0 || sourceNodeIndex >= GridNodeCount)
-{
-return;
-}
+		return -1;
+	}
 
-if (sourceNodeIndex == targetNodeIndex)
-{
-_statusLabel.Text = $"{componentName} is already on node {targetNodeIndex + 1}.";
-return;
-}
+	private void OnComponentDroppedToGridNode(int targetNodeIndex, string componentName, string sourceList, int sourceNodeIndex)
+	{
+		if (targetNodeIndex < 0 || targetNodeIndex >= GridNodeCount)
+		{
+			return;
+		}
 
-if (_gridComponents[sourceNodeIndex] != componentName)
-{
-return;
-}
+		if (sourceList == "available")
+		{
+			var currentNodeIndex = FindComponentNode(componentName);
+			if (currentNodeIndex >= 0)
+			{
+				if (currentNodeIndex == targetNodeIndex)
+				{
+					_statusLabel.Text = $"{componentName} is already on node {targetNodeIndex + 1}.";
+					return;
+				}
 
-var targetComponent = _gridComponents[targetNodeIndex];
-_gridComponents[targetNodeIndex] = componentName;
-_gridComponents[sourceNodeIndex] = targetComponent;
-RefreshGridState();
-}
+				_gridComponents[currentNodeIndex] = string.Empty;
+			}
 
-private void OnComponentRemovedFromGrid(string componentName, string sourceList, int sourceNodeIndex)
-{
-if (sourceList != "grid" || sourceNodeIndex < 0 || sourceNodeIndex >= GridNodeCount)
-{
-return;
-}
+			_gridComponents[targetNodeIndex] = componentName;
+			RefreshGridState();
+			return;
+		}
 
-if (_gridComponents[sourceNodeIndex] != componentName)
-{
-return;
-}
+		if (sourceList != "grid" || sourceNodeIndex < 0 || sourceNodeIndex >= GridNodeCount)
+		{
+			return;
+		}
 
-_gridComponents[sourceNodeIndex] = string.Empty;
-RefreshGridState();
-}
+		if (sourceNodeIndex == targetNodeIndex)
+		{
+			_statusLabel.Text = $"{componentName} is already on node {targetNodeIndex + 1}.";
+			return;
+		}
+
+		if (_gridComponents[sourceNodeIndex] != componentName)
+		{
+			return;
+		}
+
+		var targetComponent = _gridComponents[targetNodeIndex];
+		_gridComponents[targetNodeIndex] = componentName;
+		_gridComponents[sourceNodeIndex] = targetComponent;
+		RefreshGridState();
+	}
+
+	private void OnComponentRemovedFromGrid(string componentName, string sourceList, int sourceNodeIndex)
+	{
+		if (sourceList != "grid" || sourceNodeIndex < 0 || sourceNodeIndex >= GridNodeCount)
+		{
+			return;
+		}
+
+		if (_gridComponents[sourceNodeIndex] != componentName)
+		{
+			return;
+		}
+
+		_gridComponents[sourceNodeIndex] = string.Empty;
+		RefreshGridState();
+	}
 }

@@ -129,80 +129,192 @@ layout_mode = 2
 script = ExtResource("4_if2cu")
 NodeIndex = 0
 
+[node name="ContentLabel" type="Label" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid/Node01"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="Node02" type="PanelContainer" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid"]
 layout_mode = 2
 script = ExtResource("4_if2cu")
 NodeIndex = 1
+
+[node name="ContentLabel" type="Label" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid/Node02"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="Node03" type="PanelContainer" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid"]
 layout_mode = 2
 script = ExtResource("4_if2cu")
 NodeIndex = 2
 
+[node name="ContentLabel" type="Label" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid/Node03"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="Node04" type="PanelContainer" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid"]
 layout_mode = 2
 script = ExtResource("4_if2cu")
 NodeIndex = 3
+
+[node name="ContentLabel" type="Label" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid/Node04"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="Node05" type="PanelContainer" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid"]
 layout_mode = 2
 script = ExtResource("4_if2cu")
 NodeIndex = 4
 
+[node name="ContentLabel" type="Label" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid/Node05"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="Node06" type="PanelContainer" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid"]
 layout_mode = 2
 script = ExtResource("4_if2cu")
 NodeIndex = 5
+
+[node name="ContentLabel" type="Label" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid/Node06"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="Node07" type="PanelContainer" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid"]
 layout_mode = 2
 script = ExtResource("4_if2cu")
 NodeIndex = 6
 
+[node name="ContentLabel" type="Label" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid/Node07"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="Node08" type="PanelContainer" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid"]
 layout_mode = 2
 script = ExtResource("4_if2cu")
 NodeIndex = 7
+
+[node name="ContentLabel" type="Label" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid/Node08"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="Node09" type="PanelContainer" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid"]
 layout_mode = 2
 script = ExtResource("4_if2cu")
 NodeIndex = 8
 
+[node name="ContentLabel" type="Label" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid/Node09"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="Node10" type="PanelContainer" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid"]
 layout_mode = 2
 script = ExtResource("4_if2cu")
 NodeIndex = 9
+
+[node name="ContentLabel" type="Label" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid/Node10"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="Node11" type="PanelContainer" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid"]
 layout_mode = 2
 script = ExtResource("4_if2cu")
 NodeIndex = 10
 
+[node name="ContentLabel" type="Label" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid/Node11"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="Node12" type="PanelContainer" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid"]
 layout_mode = 2
 script = ExtResource("4_if2cu")
 NodeIndex = 11
+
+[node name="ContentLabel" type="Label" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid/Node12"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="Node13" type="PanelContainer" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid"]
 layout_mode = 2
 script = ExtResource("4_if2cu")
 NodeIndex = 12
 
+[node name="ContentLabel" type="Label" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid/Node13"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="Node14" type="PanelContainer" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid"]
 layout_mode = 2
 script = ExtResource("4_if2cu")
 NodeIndex = 13
+
+[node name="ContentLabel" type="Label" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid/Node14"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="Node15" type="PanelContainer" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid"]
 layout_mode = 2
 script = ExtResource("4_if2cu")
 NodeIndex = 14
 
+[node name="ContentLabel" type="Label" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid/Node15"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="Node16" type="PanelContainer" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid"]
 layout_mode = 2
 script = ExtResource("4_if2cu")
 NodeIndex = 15
+
+[node name="ContentLabel" type="Label" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/BuilderGrid/Node16"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="StatusLabel" type="Label" parent="MarginContainer/RootColumn"]
 unique_name_in_owner = true
