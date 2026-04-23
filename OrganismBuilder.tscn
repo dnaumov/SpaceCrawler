@@ -320,3 +320,8 @@ vertical_alignment = 1
 unique_name_in_owner = true
 layout_mode = 2
 text = "Placed components: 0/16"
+
+[node name="StartGameplayButton" type="Button" parent="MarginContainer/RootColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Start Gameplay"

@@ -12,12 +12,14 @@ public partial class OrganismBuilderScene : Control
 	private GridContainer _gridContainer = null!;
 	private RemoveDropZone _removeDropZone = null!;
 	private Label _statusLabel = null!;
+	private Button _startGameplayButton = null!;
 
 	public override void _Ready()
 	{
 		BindUiNodes();
 		BindGridSlots();
 		_removeDropZone.ComponentRemoved += OnComponentRemovedFromGrid;
+		_startGameplayButton.Pressed += OnStartGameplayPressed;
 		RefreshGridState();
 	}
 
@@ -26,6 +28,7 @@ public partial class OrganismBuilderScene : Control
 		_gridContainer = GetNode<GridContainer>("%BuilderGrid");
 		_removeDropZone = GetNode<RemoveDropZone>("%RemoveDropZone");
 		_statusLabel = GetNode<Label>("%StatusLabel");
+		_startGameplayButton = GetNode<Button>("%StartGameplayButton");
 	}
 
 	private void BindGridSlots()
@@ -163,5 +166,10 @@ public partial class OrganismBuilderScene : Control
 
 		_gridComponents[sourceNodeIndex] = string.Empty;
 		RefreshGridState();
+	}
+
+	private void OnStartGameplayPressed()
+	{
+		GetTree().ChangeSceneToFile("res://Gameplay.tscn");
 	}
 }
