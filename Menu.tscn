@@ -1,4 +1,4 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=2 format=3 uid="uid://dhn1h1cwr3u7s"]
 
 [ext_resource type="Script" path="res://Scripts/UI/MenuScene.cs" id="1_hjkwn"]
 

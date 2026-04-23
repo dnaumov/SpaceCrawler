@@ -12,6 +12,10 @@ public partial class MenuScene : Control
 
 	private void OnOpenBuilderPressed()
 	{
-		GetTree().ChangeSceneToFile("res://OrganismBuilder.tscn");
+		var error = GetTree().ChangeSceneToFile(ScenePaths.OrganismBuilder);
+		if (error != Error.Ok)
+		{
+			GD.PushError($"Failed to load builder scene: {error}");
+		}
 	}
 }

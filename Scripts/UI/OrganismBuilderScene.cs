@@ -170,6 +170,10 @@ public partial class OrganismBuilderScene : Control
 
 	private void OnStartGameplayPressed()
 	{
-		GetTree().ChangeSceneToFile("res://Gameplay.tscn");
+		var error = GetTree().ChangeSceneToFile(ScenePaths.Gameplay);
+		if (error != Error.Ok)
+		{
+			GD.PushError($"Failed to load gameplay scene: {error}");
+		}
 	}
 }
