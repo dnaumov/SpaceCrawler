@@ -194,7 +194,6 @@ public partial class OrganismBuilderScene : Control
 		var payload = new Godot.Collections.Dictionary
 		{
 			{ "grid_size", GridSize },
-			{ "node_count", GridNodeCount },
 			{ "components", serializedComponents }
 		};
 
