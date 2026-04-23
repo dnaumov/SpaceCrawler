@@ -204,9 +204,7 @@ public partial class OrganismBuilderScene : Control
 			return;
 		}
 
-		using (file)
-		{
-			file.StoreString(Json.Stringify(payload, "\t"));
-		}
+		using var openedFile = file;
+		openedFile.StoreString(Json.Stringify(payload, "\t"));
 	}
 }
