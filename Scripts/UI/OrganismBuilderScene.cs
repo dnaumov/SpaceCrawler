@@ -197,13 +197,16 @@ public partial class OrganismBuilderScene : Control
 			{ "components", serializedComponents }
 		};
 
-		using var file = FileAccess.Open(OrganismConfigPath, FileAccess.ModeFlags.Write);
+		var file = FileAccess.Open(OrganismConfigPath, FileAccess.ModeFlags.Write);
 		if (file is null)
 		{
 			GD.PushError($"Failed to open organism config file for writing: {OrganismConfigPath}. Error: {FileAccess.GetOpenError()}");
 			return;
 		}
 
-		file.StoreString(Json.Stringify(payload, "\t"));
+		using (file)
+		{
+			file.StoreString(Json.Stringify(payload, "\t"));
+		}
 	}
 }
