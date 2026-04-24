@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Godot;
 
@@ -125,9 +126,21 @@ placedCount += 1;
 }
 
 var nonNucleusPlaced = placedCount - CellBlueprint.NucleusIndices.Length;
+
+// Compute duplication threshold accounting for Ribosome organelles
+var ribosomeCount = 0;
+for (var i = 0; i < GridNodeCount; i++)
+{
+if (_gridComponents[i] == OrganelleType.Ribosome.SerializedName())
+{
+ribosomeCount++;
+}
+}
+
+var dupThreshold = Math.Max(1, placedCount - ribosomeCount);
 _statusLabel.Text =
 $"Organelles placed: {nonNucleusPlaced}/{GridNodeCount - CellBlueprint.NucleusIndices.Length} " +
-$"| Cell elements: {placedCount}/16 | Duplicates at {placedCount} food";
+$"| Cell elements: {placedCount}/16 | Duplicates at {dupThreshold} food";
 }
 
 private int FindComponentNode(string componentName)

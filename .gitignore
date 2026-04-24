@@ -69,3 +69,6 @@ vs/
 *.pidb
 *.svclog
 *.scc
+# Console simulation build output
+SpaceCrawlerSimulation/bin/
+SpaceCrawlerSimulation/obj/

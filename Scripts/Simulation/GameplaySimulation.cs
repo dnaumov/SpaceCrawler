@@ -657,7 +657,6 @@ public partial class GameplaySimulation : Node2D
             return;
         }
 
-        var env = GetDominantEnvironment(Vector2.Zero); // unused, nutritious handled at collection
         // Prefer nutritious zone spawn (twice as often there)
         Vector2 pos;
         if (_envZones.Count > 0 && _rng.Randf() < 0.3f)
