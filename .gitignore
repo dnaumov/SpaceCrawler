@@ -72,3 +72,5 @@ vs/
 # Console simulation build output
 SpaceCrawlerSimulation/bin/
 SpaceCrawlerSimulation/obj/
+SpaceCrawlerSimulation.Runner/bin/
+SpaceCrawlerSimulation.Runner/obj/
