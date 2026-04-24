@@ -1,373 +1,356 @@
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using Godot;
 
+/// <summary>
+/// Godot rendering and input layer for the cell-biology simulation.
+/// All game rules and state live in <see cref="SimulationEngine"/>;
+/// this class is responsible only for:
+///   - reading player input and forwarding it to the engine
+///   - drawing the arena, environment zones, food items, and cells
+///   - managing the match timer and HUD
+/// </summary>
 public partial class GameplaySimulation : Node2D
 {
-	[Export] public float MatchDuration { get; set; } = 60.0f;
-	[Export] public Vector2 ArenaSize { get; set; } = new(1152.0f, 648.0f);
-	[Export] public int AiCompetitorCount { get; set; } = 3;
-	[Export] public float FoodSpawnInterval { get; set; } = 0.6f;
-	[Export] public int MaxFood { get; set; } = 80;
-	[Export] public float FoodEnergyValue { get; set; } = 12.0f;
-	[Export] public float CellRadius { get; set; } = 12.0f;
-	[Export] public float FoodRadius { get; set; } = 5.0f;
-	[Export] public float CollectionRadius { get; set; } = 18.0f;
+    // ── Godot exports ─────────────────────────────────────────────────────────
+    [Export] public float   MatchDuration     { get; set; } = 120.0f;
+    [Export] public Vector2 ArenaSize         { get; set; } = new(1152.0f, 648.0f);
+    [Export] public int     AiCompetitorCount { get; set; } = 3;
+    [Export] public float   FoodSpawnInterval { get; set; } = 0.8f;
+    [Export] public int     MaxFood           { get; set; } = 80;
 
-	private sealed class Competitor
-	{
-		public string Name = string.Empty;
-		public bool IsPlayer;
-		public Vector2 Position;
-		public float Speed;
-		public float Energy;
-		public float MaxEnergy;
-		public float EnergyDrain;
-		public float Health;
-		public float MaxHealth;
-		public int FoodCollected;
-		public bool Alive;
-		public Color Color;
-		public Vector2 WanderDirection = Vector2.Right;
-		public float WanderTimeLeft;
-	}
+    // S = 16 pixels per simulation unit (console uses S = 1)
+    private const float UnitScale = 16.0f;
 
-	private readonly RandomNumberGenerator _rng = new();
-	private readonly List<Competitor> _competitors = [];
-	private readonly List<Vector2> _foods = [];
+    private SimulationEngine _engine = null!;
+    private CellState?       _playerCell;
 
-	private Timer _matchTimer = default!;
-	private Label _hudTimer = default!;
-	private Label _hudStatus = default!;
-	private Label _hudScoreboard = default!;
+    // Cell display colours indexed by cell instance (assigned at creation)
+    private readonly System.Collections.Generic.Dictionary<CellState, Color> _cellColors = [];
 
-	private float _foodSpawnCooldown;
-	private bool _matchEnded;
-	private Competitor? _finalWinner;
+    private Timer  _matchTimer  = default!;
+    private Label  _hudTimer    = default!;
+    private Label  _hudStatus   = default!;
+    private Label  _hudScoreboard = default!;
+    private bool   _matchEnded;
+    private readonly RandomNumberGenerator _rng = new();
 
-	public override void _Ready()
-	{
-		_matchTimer = GetNode<Timer>("MatchTimer");
-		_matchTimer.Timeout += OnMatchTimeout;
+    // ── Godot lifecycle ───────────────────────────────────────────────────────
 
-		_rng.Randomize();
-		SetupHud();
-		StartMatch();
-	}
+    public override void _Ready()
+    {
+        _matchTimer          = GetNode<Timer>("MatchTimer");
+        _matchTimer.Timeout += OnMatchTimeout;
 
-	public override void _Process(double delta)
-	{
-		if (_matchEnded)
-		{
-			return;
-		}
+        _rng.Randomize();
+        SetupHud();
+        StartMatch();
+    }
 
-		var dt = (float)delta;
-		_foodSpawnCooldown -= dt;
-		if (_foodSpawnCooldown <= 0.0f)
-		{
-			_foodSpawnCooldown += FoodSpawnInterval;
-			SpawnFood();
-		}
+    public override void _Process(double delta)
+    {
+        if (_matchEnded)
+        {
+            return;
+        }
 
-		UpdateCompetitors(dt);
-		UpdateHud();
-		QueueRedraw();
+        // Forward player input to the engine before stepping
+        var rawInput = Input.GetVector("ui_left", "ui_right", "ui_up", "ui_down");
+        _engine.PlayerInputDirection = new Vec2(rawInput.X, rawInput.Y);
 
-		if (AliveCompetitorsCount() == 0)
-		{
-			EndMatch("All organisms died.");
-		}
-	}
+        _engine.Step((float)delta);
+        UpdateHud();
+        QueueRedraw();
 
-	public override void _Draw()
-	{
-		DrawRect(new Rect2(Vector2.Zero, ArenaSize), new Color(0.05f, 0.08f, 0.12f), true);
+        if (_engine.AliveCellCount == 0)
+        {
+            EndMatch("All cells died.");
+        }
+    }
 
-		foreach (var food in _foods)
-		{
-			DrawCircle(food, FoodRadius, new Color(0.4f, 1.0f, 0.4f));
-		}
+    public override void _Draw()
+    {
+        // Background
+        DrawRect(new Rect2(Vector2.Zero, ArenaSize), new Color(0.05f, 0.08f, 0.12f), true);
 
-		foreach (var competitor in _competitors)
-		{
-			var color = competitor.Color;
-			if (!competitor.Alive)
-			{
-				color.A = 0.35f;
-			}
+        // Environment zones
+        foreach (var zone in _engine.Zones)
+        {
+            var zoneColor = zone.Type switch
+            {
+                EnvironmentType.Viscous    => new Color(0.2f, 0.2f, 0.6f, 0.25f),
+                EnvironmentType.Toxic      => new Color(0.3f, 0.6f, 0.2f, 0.25f),
+                EnvironmentType.Turbulent  => new Color(0.6f, 0.4f, 0.1f, 0.25f),
+                EnvironmentType.Nutritious => new Color(0.6f, 0.6f, 0.1f, 0.25f),
+                _                          => new Color(0, 0, 0, 0)
+            };
 
-			DrawCircle(competitor.Position, CellRadius, color);
-		}
-	}
+            var rect = new Rect2(zone.X, zone.Y, zone.W, zone.H);
+            DrawRect(rect, zoneColor, true);
+            DrawRect(rect, zoneColor with { A = 0.5f }, false);
+        }
 
-	private void StartMatch()
-	{
-		_matchEnded = false;
-		_finalWinner = null;
-		_foodSpawnCooldown = 0.0f;
-		_foods.Clear();
-		_competitors.Clear();
-		_hudStatus.Text = "Collect more food than rivals before time runs out.";
+        // Food items
+        var foodHalf = SimConstants.FoodHalfSize * UnitScale;
+        foreach (var food in _engine.Foods)
+        {
+            var pos = V(food);
+            DrawRect(new Rect2(pos - Vector2.One * foodHalf, Vector2.One * (foodHalf * 2f)),
+                     new Color(0.4f, 1.0f, 0.4f), true);
+        }
 
-		_competitors.Add(new Competitor
-		{
-			Name = "Player",
-			IsPlayer = true,
-			Position = ArenaSize * 0.5f,
-			Speed = 220.0f,
-			MaxEnergy = 100.0f,
-			Energy = 100.0f,
-			EnergyDrain = 4.5f,
-			MaxHealth = 100.0f,
-			Health = 100.0f,
-			FoodCollected = 0,
-			Alive = true,
-			Color = new Color(0.35f, 0.75f, 1.0f),
-			WanderDirection = Vector2.Right,
-			WanderTimeLeft = 0.0f
-		});
+        // Cells
+        var cellHalf = SimConstants.CellHalfSize * UnitScale;
+        foreach (var cell in _engine.Cells)
+        {
+            var color = GetCellColor(cell);
+            if (!cell.Alive)
+            {
+                color.A = 0.3f;
+            }
+            else if (cell.Food < 0f)
+            {
+                color = color.Lerp(new Color(1f, 0.2f, 0.2f),
+                                   Mathf.Clamp(-cell.Food / 4f, 0f, 1f));
+            }
 
-		for (var i = 0; i < AiCompetitorCount; i++)
-		{
-			_competitors.Add(new Competitor
-			{
-				Name = $"AI {i + 1}",
-				IsPlayer = false,
-				Position = new Vector2(
-					_rng.RandfRange(CellRadius, ArenaSize.X - CellRadius),
-					_rng.RandfRange(CellRadius, ArenaSize.Y - CellRadius)
-				),
-				Speed = _rng.RandfRange(160.0f, 205.0f),
-				MaxEnergy = 115.0f,
-				Energy = _rng.RandfRange(90.0f, 115.0f),
-				EnergyDrain = _rng.RandfRange(3.2f, 5.1f),
-				MaxHealth = 120.0f,
-				Health = _rng.RandfRange(80.0f, 120.0f),
-				FoodCollected = 0,
-				Alive = true,
-				Color = Color.FromHsv(_rng.Randf(), 0.65f, 0.95f),
-				WanderDirection = Vector2.Right.Rotated(_rng.RandfRange(-Mathf.Pi, Mathf.Pi)),
-				WanderTimeLeft = 0.0f
-			});
-		}
+            DrawSetTransform(V(cell.Position), cell.Rotation);
+            DrawRect(new Rect2(-Vector2.One * cellHalf, Vector2.One * (cellHalf * 2f)), color, true);
+            // Orientation marker (forward direction)
+            DrawLine(Vector2.Zero, new Vector2(0f, -cellHalf * 1.2f),
+                     Colors.White with { A = 0.6f }, 2f);
+            DrawSetTransform(Vector2.Zero, 0f);
+        }
+    }
 
-		_matchTimer.Stop();
-		_matchTimer.WaitTime = MatchDuration;
-		_matchTimer.OneShot = true;
-		_matchTimer.Start();
-		UpdateHud();
-	}
+    // ── match management ──────────────────────────────────────────────────────
 
-	private void UpdateCompetitors(float delta)
-	{
-		foreach (var competitor in _competitors)
-		{
-			if (!competitor.Alive)
-			{
-				continue;
-			}
+    private void StartMatch()
+    {
+        _matchEnded = false;
+        _cellColors.Clear();
 
-			var direction = competitor.IsPlayer
-				? Input.GetVector("ui_left", "ui_right", "ui_up", "ui_down")
-				: GetAiDirection(competitor, delta);
+        // Create engine in pixel-space coordinates (unitScale=16 maps S-units to pixels)
+        _engine = new SimulationEngine(
+            arenaW:    ArenaSize.X,
+            arenaH:    ArenaSize.Y,
+            unitScale: UnitScale,
+            seed:      (int)_rng.Randi());
 
-			if (direction.LengthSquared() > 1.0f)
-			{
-				direction = direction.Normalized();
-			}
+        _engine.FoodSpawnInterval = FoodSpawnInterval;
+        _engine.MaxFood           = MaxFood;
 
-			if (direction != Vector2.Zero)
-			{
-				competitor.Position += direction * competitor.Speed * delta;
-				competitor.Position = new Vector2(
-					Mathf.Clamp(competitor.Position.X, CellRadius, ArenaSize.X - CellRadius),
-					Mathf.Clamp(competitor.Position.Y, CellRadius, ArenaSize.Y - CellRadius)
-				);
-			}
+        // Player cell
+        var playerBlueprint = TryLoadPlayerBlueprint() ?? CellBlueprint.Default();
+        var playerPos = new Vec2(ArenaSize.X * 0.5f, ArenaSize.Y * 0.5f);
+        _playerCell   = _engine.CreateCell("Player", playerPos, playerBlueprint, isPlayer: true);
+        _cellColors[_playerCell] = new Color(0.35f, 0.75f, 1.0f);
 
-			competitor.Energy = Mathf.Max(0.0f, competitor.Energy - competitor.EnergyDrain * delta);
-			if (competitor.Energy <= 0.0f || competitor.Health <= 0.0f)
-			{
-				competitor.Alive = false;
-			}
-			else
-			{
-				CollectFood(competitor);
-			}
-		}
-	}
+        // AI competitors
+        for (var i = 0; i < AiCompetitorCount; i++)
+        {
+            var pos = new Vec2(
+                _rng.RandfRange(SimConstants.CellHalfSize * UnitScale * 2,
+                                ArenaSize.X - SimConstants.CellHalfSize * UnitScale * 2),
+                _rng.RandfRange(SimConstants.CellHalfSize * UnitScale * 2,
+                                ArenaSize.Y - SimConstants.CellHalfSize * UnitScale * 2));
+            var cell = _engine.CreateCell($"AI {i + 1}", pos, GenerateAiBlueprint());
+            _cellColors[cell] = Color.FromHsv(_rng.Randf(), 0.65f, 0.95f);
+        }
 
-	private Vector2 GetAiDirection(Competitor competitor, float delta)
-	{
-		var targetFood = FindNearestFood(competitor.Position);
-		if (targetFood.HasValue)
-		{
-			return (targetFood.Value - competitor.Position).Normalized();
-		}
+        _hudStatus.Text = "Collect food to duplicate. Survive the drain.";
+        _matchTimer.Stop();
+        _matchTimer.WaitTime = MatchDuration;
+        _matchTimer.OneShot  = true;
+        _matchTimer.Start();
+        UpdateHud();
+    }
 
-		competitor.WanderTimeLeft -= delta;
-		if (competitor.WanderTimeLeft <= 0.0f)
-		{
-			competitor.WanderDirection = Vector2.Right.Rotated(_rng.RandfRange(-Mathf.Pi, Mathf.Pi));
-			competitor.WanderTimeLeft = _rng.RandfRange(0.4f, 1.2f);
-		}
+    private CellBlueprint GenerateAiBlueprint()
+    {
+        var grid = new OrganelleType[16];
+        foreach (var idx in CellBlueprint.NucleusIndices)
+        {
+            grid[idx] = OrganelleType.Nucleus;
+        }
 
-		return competitor.WanderDirection;
-	}
+        var freeSlots = System.Linq.Enumerable.Range(0, 16)
+            .Where(i => !CellBlueprint.NucleusIndices.Contains(i))
+            .ToList();
 
-	private void CollectFood(Competitor competitor)
-	{
-		var collectionRadiusSquared = CollectionRadius * CollectionRadius;
-		for (var i = _foods.Count - 1; i >= 0; i--)
-		{
-			if (competitor.Position.DistanceSquaredTo(_foods[i]) <= collectionRadiusSquared)
-			{
-				_foods.RemoveAt(i);
-				competitor.FoodCollected += 1;
-				competitor.Energy = Mathf.Min(competitor.MaxEnergy, competitor.Energy + FoodEnergyValue);
-			}
-		}
-	}
+        var pool = new[]
+        {
+            OrganelleType.RandomEngine, OrganelleType.EffectiveEngine,
+            OrganelleType.Engine, OrganelleType.Mitochondria,
+            OrganelleType.FoodGradientDetector, OrganelleType.SlipperyMembrane
+        };
 
-	private Vector2? FindNearestFood(Vector2 origin)
-	{
-		if (_foods.Count == 0)
-		{
-			return null;
-		}
+        var count = (int)_rng.RandiRange(2, 8);
+        for (var i = 0; i < count && freeSlots.Count > 0; i++)
+        {
+            var slotIdx   = (int)_rng.RandiRange(0, freeSlots.Count - 1);
+            var organelle = pool[(int)_rng.RandiRange(0, pool.Length - 1)];
+            grid[freeSlots[slotIdx]] = organelle;
+            freeSlots.RemoveAt(slotIdx);
+        }
 
-		var nearest = _foods[0];
-		var nearestDistance = origin.DistanceSquaredTo(nearest);
-		for (var i = 1; i < _foods.Count; i++)
-		{
-			var distance = origin.DistanceSquaredTo(_foods[i]);
-			if (distance < nearestDistance)
-			{
-				nearestDistance = distance;
-				nearest = _foods[i];
-			}
-		}
+        return new CellBlueprint(grid);
+    }
 
-		return nearest;
-	}
+    private void OnMatchTimeout() => EndMatch();
 
-	private void SpawnFood()
-	{
-		if (_foods.Count >= MaxFood)
-		{
-			return;
-		}
+    private void EndMatch(string reason = "")
+    {
+        if (_matchEnded)
+        {
+            return;
+        }
 
-		_foods.Add(new Vector2(
-			_rng.RandfRange(FoodRadius, ArenaSize.X - FoodRadius),
-			_rng.RandfRange(FoodRadius, ArenaSize.Y - FoodRadius)
-		));
-	}
+        _matchEnded = true;
+        _matchTimer.Stop();
 
-	private int AliveCompetitorsCount() => _competitors.Count(c => c.Alive);
+        var winner = _engine.GetWinner();
+        if (winner is null)
+        {
+            _hudStatus.Text = "Match ended. No winner.";
+        }
+        else
+        {
+            var msg = $"Winner: {winner.Name}  (food={winner.Food:F1}, dups={winner.DuplicationCount})";
+            if (!string.IsNullOrEmpty(reason))
+            {
+                msg += $" — {reason}";
+            }
 
-	private void OnMatchTimeout() => EndMatch();
+            _hudStatus.Text = msg;
+        }
 
-	private void EndMatch(string reason = "")
-	{
-		if (_matchEnded)
-		{
-			return;
-		}
+        UpdateHud();
+    }
 
-		_matchEnded = true;
-		_matchTimer.Stop();
-		_finalWinner = CalculateWinner();
+    // ── HUD ───────────────────────────────────────────────────────────────────
 
-		if (_finalWinner == null)
-		{
-			_hudStatus.Text = "Match ended. No winner.";
-		}
-		else
-		{
-			var message = $"Winner: {_finalWinner.Name} (food={_finalWinner.FoodCollected}, energy={_finalWinner.Energy:F1}, health={_finalWinner.Health:F1})";
-			if (!string.IsNullOrEmpty(reason))
-			{
-				message += $" — {reason}";
-			}
+    private void SetupHud()
+    {
+        var canvas = new CanvasLayer();
+        AddChild(canvas);
 
-			_hudStatus.Text = message;
-		}
+        _hudTimer       = new Label { Position = new Vector2(12f, 8f) };
+        _hudStatus      = new Label { Position = new Vector2(12f, 32f) };
+        _hudScoreboard  = new Label { Position = new Vector2(12f, 56f) };
 
-		UpdateHud();
-	}
+        canvas.AddChild(_hudTimer);
+        canvas.AddChild(_hudStatus);
+        canvas.AddChild(_hudScoreboard);
 
-	private Competitor? CalculateWinner()
-	{
-		if (_competitors.Count == 0)
-		{
-			return null;
-		}
+        var legend = new Label
+        {
+            Position = new Vector2(ArenaSize.X - 220f, 8f),
+            Text = "Zones: [Viscous] [Toxic] [Turbulent] [Nutritious]"
+        };
+        canvas.AddChild(legend);
+    }
 
-		var maxFood = _competitors.Max(c => c.FoodCollected);
-		var foodTied = _competitors
-			.Where(c => c.FoodCollected == maxFood)
-			.ToList();
-		if (foodTied.Count == 1)
-		{
-			return foodTied[0];
-		}
+    private void UpdateHud()
+    {
+        if (_matchEnded)
+        {
+            _hudTimer.Text = "Time left: 0.0s";
+        }
+        else
+        {
+            _hudTimer.Text = $"Time left: {_matchTimer.TimeLeft:F1}s  |  " +
+                             $"Cells: {_engine.AliveCellCount}/{_engine.Cells.Count}  |  " +
+                             $"Food: {_engine.Foods.Count}";
+        }
 
-		var maxEnergy = foodTied.Max(c => c.Energy);
-		var energyTied = foodTied
-			.Where(c => Mathf.IsEqualApprox(c.Energy, maxEnergy))
-			.ToList();
-		if (energyTied.Count == 1)
-		{
-			return energyTied[0];
-		}
+        var standings = _engine.Cells
+            .OrderByDescending(c => c.FoodCollectedForDup)
+            .ThenByDescending(c => c.Food)
+            .ToList();
 
-		var maxHealth = energyTied.Max(c => c.Health);
-		var healthTied = energyTied
-			.Where(c => Mathf.IsEqualApprox(c.Health, maxHealth))
-			.ToList();
-		if (healthTied.Count == 1)
-		{
-			return healthTied[0];
-		}
+        var lines = new System.Collections.Generic.List<string>
+        {
+            "Standings (dup-food / food-reserve):"
+        };
 
-		return healthTied[_rng.RandiRange(0, healthTied.Count - 1)];
-	}
+        foreach (var cell in standings)
+        {
+            var suffix = cell.Alive ? string.Empty : " [DEAD]";
+            lines.Add($"- {cell.Name}: {cell.FoodCollectedForDup} / {cell.Food:F1} " +
+                      $"[{cell.Blueprint.ElementCount} elements]{suffix}");
+        }
 
-	private void SetupHud()
-	{
-		var canvas = new CanvasLayer();
-		AddChild(canvas);
+        _hudScoreboard.Text = string.Join('\n', lines);
+    }
 
-		_hudTimer = new Label { Position = new Vector2(12.0f, 8.0f) };
-		canvas.AddChild(_hudTimer);
+    // ── helpers ───────────────────────────────────────────────────────────────
 
-		_hudStatus = new Label { Position = new Vector2(12.0f, 32.0f) };
-		canvas.AddChild(_hudStatus);
+    /// <summary>Convert simulation Vec2 to Godot Vector2.</summary>
+    private static Vector2 V(Vec2 v) => new(v.X, v.Y);
 
-		_hudScoreboard = new Label { Position = new Vector2(12.0f, 56.0f) };
-		canvas.AddChild(_hudScoreboard);
-	}
+    private Color GetCellColor(CellState cell)
+    {
+        if (_cellColors.TryGetValue(cell, out var c))
+        {
+            return c;
+        }
 
-	private void UpdateHud()
-	{
-		_hudTimer.Text = _matchEnded ? "Time left: 0.0s" : $"Time left: {_matchTimer.TimeLeft:F1}s";
+        // Daughter cells get a tinted version of their parent's color
+        var newColor = Color.FromHsv(_rng.Randf(), 0.65f, 0.95f);
+        _cellColors[cell] = newColor;
+        return newColor;
+    }
 
-		var standings = _competitors
-			.OrderByDescending(c => c.FoodCollected)
-			.ThenByDescending(c => c.Energy)
-			.ThenByDescending(c => c.Health)
-			.ToList();
+    // ── blueprint loading ─────────────────────────────────────────────────────
 
-		var lines = new List<string> { "Standings (food / energy / health):" };
-		foreach (var competitor in standings)
-		{
-			var deadSuffix = competitor.Alive ? string.Empty : " [DEAD]";
-			lines.Add($"- {competitor.Name}: {competitor.FoodCollected} / {competitor.Energy:F1} / {competitor.Health:F1}{deadSuffix}");
-		}
+    private static CellBlueprint? TryLoadPlayerBlueprint()
+    {
+        const string path = "user://organism_config.json";
+        if (!FileAccess.FileExists(path))
+        {
+            return null;
+        }
 
-		_hudScoreboard.Text = string.Join('\n', lines);
-	}
+        using var file = FileAccess.Open(path, FileAccess.ModeFlags.Read);
+        if (file is null)
+        {
+            return null;
+        }
+
+        var json = new Json();
+        if (json.Parse(file.GetAsText()) != Error.Ok)
+        {
+            return null;
+        }
+
+        if (json.Data.VariantType != Variant.Type.Dictionary)
+        {
+            return null;
+        }
+
+        var dict = json.Data.AsGodotDictionary();
+        if (!dict.ContainsKey("components"))
+        {
+            return null;
+        }
+
+        var arr = dict["components"].AsGodotArray();
+        if (arr.Count < 16)
+        {
+            return null;
+        }
+
+        var grid = new OrganelleType[16];
+        for (var i = 0; i < 16; i++)
+        {
+            grid[i] = OrganelleTypeExtensions.FromSerializedName(arr[i].AsString());
+        }
+
+        foreach (var idx in CellBlueprint.NucleusIndices)
+        {
+            grid[idx] = OrganelleType.Nucleus;
+        }
+
+        return new CellBlueprint(grid);
+    }
 }

@@ -4,4 +4,8 @@
     <TargetFramework Condition=" '$(GodotTargetPlatform)' == 'android' ">net9.0</TargetFramework>
     <EnableDynamicLoading>true</EnableDynamicLoading>
   </PropertyGroup>
+  <ItemGroup>
+    <!-- Shared pure-C# simulation logic (no Godot dependency) -->
+    <ProjectReference Include="SpaceCrawlerSimulation/SpaceCrawlerSimulation.csproj" />
+  </ItemGroup>
 </Project>

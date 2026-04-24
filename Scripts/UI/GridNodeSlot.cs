@@ -12,6 +12,7 @@ public partial class GridNodeSlot : PanelContainer
 	public int NodeIndex { get; set; } = -1;
 
 	private string _componentName = string.Empty;
+	private bool _isNucleus;
 	private Label _contentLabel = null!;
 
 	public override void _Ready()
@@ -27,9 +28,19 @@ public partial class GridNodeSlot : PanelContainer
 		UpdateLabel();
 	}
 
+	/// <summary>
+	/// Marks this slot as a permanent nucleus cell that cannot be dragged from or dropped onto.
+	/// </summary>
+	public void SetNucleus()
+	{
+		_isNucleus = true;
+		_componentName = OrganelleType.Nucleus.SerializedName();
+		UpdateLabel();
+	}
+
 	public override Variant _GetDragData(Vector2 atPosition)
 	{
-		if (string.IsNullOrEmpty(_componentName))
+		if (_isNucleus || string.IsNullOrEmpty(_componentName))
 		{
 			return default;
 		}
@@ -45,12 +56,22 @@ public partial class GridNodeSlot : PanelContainer
 
 	public override bool _CanDropData(Vector2 atPosition, Variant data)
 	{
+		if (_isNucleus)
+		{
+			return false;
+		}
+
 		return DragPayload.TryRead(data, out _, out var sourceList, out _)
 			&& (sourceList == "available" || sourceList == "grid");
 	}
 
 	public override void _DropData(Vector2 atPosition, Variant data)
 	{
+		if (_isNucleus)
+		{
+			return;
+		}
+
 		if (!DragPayload.TryRead(data, out var componentName, out var sourceList, out var sourceNodeIndex))
 		{
 			return;
@@ -61,6 +82,12 @@ public partial class GridNodeSlot : PanelContainer
 
 	private void UpdateLabel()
 	{
+		if (_isNucleus)
+		{
+			_contentLabel.Text = "Nucleus\n[locked]";
+			return;
+		}
+
 		var nodeText = $"Node {NodeIndex + 1}";
 		_contentLabel.Text = string.IsNullOrEmpty(_componentName)
 			? $"{nodeText}\n(Empty)"

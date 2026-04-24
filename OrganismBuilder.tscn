@@ -38,7 +38,7 @@ horizontal_alignment = 1
 
 [node name="SubtitleLabel" type="Label" parent="MarginContainer/RootColumn"]
 layout_mode = 2
-text = "Drag components from Available components into the 4x4 cell grid."
+text = "Drag organelles from Available into the 4x4 cell grid. Center 4 slots are always Nucleus (locked)."
 
 [node name="Split" type="HSplitContainer" parent="MarginContainer/RootColumn"]
 layout_mode = 2
@@ -63,35 +63,77 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="CoreMembrane" type="Label" parent="MarginContainer/RootColumn/Split/AvailablePanel/AvailableColumn/AvailableList"]
+[node name="RandomEngine" type="Label" parent="MarginContainer/RootColumn/Split/AvailablePanel/AvailableColumn/AvailableList"]
 layout_mode = 2
-text = "Core membrane"
+text = "Random Engine"
 script = ExtResource("2_sesxl")
+ComponentName = "RandomEngine"
 
-[node name="FlagellaEngine" type="Label" parent="MarginContainer/RootColumn/Split/AvailablePanel/AvailableColumn/AvailableList"]
+[node name="EffectiveEngine" type="Label" parent="MarginContainer/RootColumn/Split/AvailablePanel/AvailableColumn/AvailableList"]
 layout_mode = 2
-text = "Flagella engine"
+text = "Eff. Engine"
 script = ExtResource("2_sesxl")
+ComponentName = "EffectiveEngine"
 
-[node name="SensorCilia" type="Label" parent="MarginContainer/RootColumn/Split/AvailablePanel/AvailableColumn/AvailableList"]
+[node name="Engine" type="Label" parent="MarginContainer/RootColumn/Split/AvailablePanel/AvailableColumn/AvailableList"]
 layout_mode = 2
-text = "Sensor cilia"
+text = "Engine"
 script = ExtResource("2_sesxl")
+ComponentName = "Engine"
 
-[node name="MitochondriaCluster" type="Label" parent="MarginContainer/RootColumn/Split/AvailablePanel/AvailableColumn/AvailableList"]
+[node name="Mitochondria" type="Label" parent="MarginContainer/RootColumn/Split/AvailablePanel/AvailableColumn/AvailableList"]
 layout_mode = 2
-text = "Mitochondria cluster"
+text = "Mitochondria"
 script = ExtResource("2_sesxl")
+ComponentName = "Mitochondria"
 
-[node name="SpikeWeapon" type="Label" parent="MarginContainer/RootColumn/Split/AvailablePanel/AvailableColumn/AvailableList"]
+[node name="Chloroplast" type="Label" parent="MarginContainer/RootColumn/Split/AvailablePanel/AvailableColumn/AvailableList"]
 layout_mode = 2
-text = "Spike weapon"
+text = "Chloroplast"
 script = ExtResource("2_sesxl")
+ComponentName = "Chloroplast"
 
-[node name="ArmorPlate" type="Label" parent="MarginContainer/RootColumn/Split/AvailablePanel/AvailableColumn/AvailableList"]
+[node name="Ribosome" type="Label" parent="MarginContainer/RootColumn/Split/AvailablePanel/AvailableColumn/AvailableList"]
 layout_mode = 2
-text = "Armor plate"
+text = "Ribosome"
 script = ExtResource("2_sesxl")
+ComponentName = "Ribosome"
+
+[node name="FoodGradientDetector" type="Label" parent="MarginContainer/RootColumn/Split/AvailablePanel/AvailableColumn/AvailableList"]
+layout_mode = 2
+text = "Food Sensor"
+script = ExtResource("2_sesxl")
+ComponentName = "FoodGradientDetector"
+
+[node name="CellsGradientDetector" type="Label" parent="MarginContainer/RootColumn/Split/AvailablePanel/AvailableColumn/AvailableList"]
+layout_mode = 2
+text = "Cell Sensor"
+script = ExtResource("2_sesxl")
+ComponentName = "CellsGradientDetector"
+
+[node name="ToxicGradientDetector" type="Label" parent="MarginContainer/RootColumn/Split/AvailablePanel/AvailableColumn/AvailableList"]
+layout_mode = 2
+text = "Toxic Sensor"
+script = ExtResource("2_sesxl")
+ComponentName = "ToxicGradientDetector"
+
+[node name="FoodVision" type="Label" parent="MarginContainer/RootColumn/Split/AvailablePanel/AvailableColumn/AvailableList"]
+layout_mode = 2
+text = "Food Vision"
+script = ExtResource("2_sesxl")
+ComponentName = "FoodVision"
+
+[node name="SlipperyMembrane" type="Label" parent="MarginContainer/RootColumn/Split/AvailablePanel/AvailableColumn/AvailableList"]
+layout_mode = 2
+text = "Slip. Membrane"
+script = ExtResource("2_sesxl")
+ComponentName = "SlipperyMembrane"
+
+[node name="ToxinProducer" type="Label" parent="MarginContainer/RootColumn/Split/AvailablePanel/AvailableColumn/AvailableList"]
+layout_mode = 2
+text = "Toxin Prod."
+script = ExtResource("2_sesxl")
+ComponentName = "ToxinProducer"
 
 [node name="RemoveDropZone" type="PanelContainer" parent="MarginContainer/RootColumn/Split/AvailablePanel/AvailableColumn"]
 unique_name_in_owner = true
