@@ -5,6 +5,7 @@ public partial class OrganismBuilderScene : Control
 {
 	private const int GridSize = 4;
 	private const int GridNodeCount = GridSize * GridSize;
+	private const string OrganismConfigPath = "user://organism_config.json";
 
 	private readonly string[] _gridComponents = new string[GridNodeCount];
 	private readonly List<GridNodeSlot> _gridSlots = [];
@@ -21,6 +22,11 @@ public partial class OrganismBuilderScene : Control
 		_removeDropZone.ComponentRemoved += OnComponentRemovedFromGrid;
 		_startGameplayButton.Pressed += OnStartGameplayPressed;
 		RefreshGridState();
+	}
+
+	public override void _ExitTree()
+	{
+		SaveConfiguredOrganismToJson();
 	}
 
 	private void BindUiNodes()
@@ -175,5 +181,30 @@ public partial class OrganismBuilderScene : Control
 		{
 			GD.PushError($"Failed to load gameplay scene: {error}");
 		}
+	}
+
+	private void SaveConfiguredOrganismToJson()
+	{
+		var serializedComponents = new Godot.Collections.Array<string>();
+		for (var nodeIndex = 0; nodeIndex < GridNodeCount; nodeIndex++)
+		{
+			serializedComponents.Add(_gridComponents[nodeIndex] ?? string.Empty);
+		}
+
+		var payload = new Godot.Collections.Dictionary
+		{
+			{ "grid_size", GridSize },
+			{ "components", serializedComponents }
+		};
+
+		var file = FileAccess.Open(OrganismConfigPath, FileAccess.ModeFlags.Write);
+		if (file is null)
+		{
+			GD.PushError($"Failed to open organism config file for writing: {OrganismConfigPath}. Error: {FileAccess.GetOpenError()}");
+			return;
+		}
+
+		using var openedFile = file;
+		openedFile.StoreString(Json.Stringify(payload, "\t"));
 	}
 }
