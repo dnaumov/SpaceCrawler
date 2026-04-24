@@ -31,15 +31,17 @@ Prototype match rules:
 Core design principles:
 - Every component must have a trade-off (power vs. cost)
 - Builds should be diverse (no single dominant setup)
-- Combat is optional support for food control, not the only way to win
+- Current prototype scope is non-combat until combat systems are explicitly approved
 
-Initial component set (Stage 1 baseline):
+Initial non-combat component set (Stage 1 baseline):
 - **Core membrane**: required base; gives base HP and energy capacity
 - **Flagella engine**: increases movement speed, increases energy drain
 - **Sensor cilia**: improves food targeting/collection range, lowers max health
 - **Mitochondria cluster**: increases max energy and food-to-energy efficiency, lowers speed
-- **Spike weapon**: adds offensive pressure for future combat interactions, increases drain
 - **Armor plate**: increases health, decreases speed
+
+Detailed categorized element list:
+- See [`CELL_ELEMENTS.md`](CELL_ELEMENTS.md) (Movement, Sensors, Energy, Auxiliary)
 
 Initial stat list (Stage 1 baseline):
 - **Speed**
