@@ -1,11 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <OutputType>Library</OutputType>
+    <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
-    <!-- No extra exclusions needed: Program.cs belongs to SpaceCrawlerSimulation.Runner -->
+    <ProjectReference Include="../SpaceCrawlerSimulation/SpaceCrawlerSimulation.csproj" />
   </ItemGroup>
 </Project>

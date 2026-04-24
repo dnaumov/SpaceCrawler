@@ -1,8 +1,11 @@
-namespace SpaceCrawlerSimulation;
-
 /// <summary>
 /// Pure-C# simulation engine implementing all game rules.
 /// Advances the simulation by discrete time steps; no rendering dependency.
+///
+/// Unit scaling: all distance and speed constants from <see cref="SimConstants"/> are
+/// defined at S=1 (console scale). Pass <paramref name="unitScale"/> = S-in-pixels when
+/// creating an engine for a pixel-space renderer (e.g. unitScale=16 for the Godot game).
+/// The arena dimensions should be provided in the same units as <paramref name="unitScale"/>.
 /// </summary>
 public sealed class SimulationEngine
 {
@@ -12,34 +15,68 @@ public sealed class SimulationEngine
     private readonly List<EnvironmentZone> _zones;
     private readonly GradientField _gradients;
 
-    public float ArenaWidth { get; }
+    // Scaled physical constants (multiplied by unitScale in constructor)
+    private readonly float _cellHalfSize;
+    private readonly float _foodHalfSize;
+    private readonly float _dragBase;
+    private readonly float _randomPushMax;
+    private readonly float _randomEngineSpeed;
+    private readonly float _effectiveEngineSpeed;
+    private readonly float _engineSpeed;
+
+    public float ArenaWidth  { get; }
     public float ArenaHeight { get; }
     public float ElapsedTime { get; private set; }
     public float FoodSpawnInterval { get; set; } = 0.8f;
-    public int MaxFood { get; set; } = 80;
+    public int   MaxFood           { get; set; } = 80;
 
     private float _foodSpawnAccum;
     private float _gradRecalcAccum;
     private const float GradRecalcInterval = 0.5f;
 
     public IReadOnlyList<CellState> Cells => _cells;
-    public IReadOnlyList<Vec2> Foods => _foods;
+    public IReadOnlyList<Vec2>      Foods  => _foods;
     public IReadOnlyList<EnvironmentZone> Zones => _zones;
 
-    public SimulationEngine(float arenaW = SimConstants.ArenaWidth,
-                            float arenaH = SimConstants.ArenaHeight,
-                            int seed = 42)
+    /// <summary>
+    /// Direction vector injected by the host application for the player-controlled cell.
+    /// Set this before calling <see cref="Step"/> each frame. The engine uses this for
+    /// movement of any cell whose <see cref="CellState.IsPlayer"/> flag is true.
+    /// A zero vector means no player input this frame (cell moves autonomously).
+    /// </summary>
+    public Vec2 PlayerInputDirection { get; set; }
+
+    /// <param name="arenaW">Arena width in units matching <paramref name="unitScale"/>.</param>
+    /// <param name="arenaH">Arena height in units matching <paramref name="unitScale"/>.</param>
+    /// <param name="unitScale">
+    /// Size of one S-unit in the calling coordinate system.
+    /// Console: 1.0 (default). Godot: 16.0 (pixels per S-unit).
+    /// </param>
+    /// <param name="seed">Random seed for deterministic runs.</param>
+    public SimulationEngine(float arenaW     = SimConstants.ArenaWidth,
+                            float arenaH     = SimConstants.ArenaHeight,
+                            float unitScale  = 1f,
+                            int   seed       = 42)
     {
         ArenaWidth  = arenaW;
         ArenaHeight = arenaH;
         _rng        = new Random(seed);
         _zones      = BuildDefaultZones(arenaW, arenaH);
         _gradients  = new GradientField(arenaW, arenaH);
+
+        // Scale all spatial constants by unitScale
+        _cellHalfSize       = SimConstants.CellHalfSize       * unitScale;
+        _foodHalfSize       = SimConstants.FoodHalfSize       * unitScale;
+        _dragBase           = SimConstants.DragBase           * unitScale;
+        _randomPushMax      = SimConstants.RandomPushMax      * unitScale;
+        _randomEngineSpeed  = SimConstants.RandomEngineSpeed  * unitScale;
+        _effectiveEngineSpeed = SimConstants.EffectiveEngineSpeed * unitScale;
+        _engineSpeed        = SimConstants.EngineSpeed        * unitScale;
     }
 
     // ── population management ─────────────────────────────────────────────────
 
-    public CellState CreateCell(string name, Vec2 position, CellBlueprint blueprint)
+    public CellState CreateCell(string name, Vec2 position, CellBlueprint blueprint, bool isPlayer = false)
     {
         var cell = new CellState
         {
@@ -47,7 +84,8 @@ public sealed class SimulationEngine
             Blueprint = blueprint,
             Position  = position,
             Rotation  = (float)(_rng.NextDouble() * MathF.PI * 2),
-            Food      = blueprint.ElementCount * 0.5f
+            Food      = blueprint.ElementCount * 0.5f,
+            IsPlayer  = isPlayer
         };
         _cells.Add(cell);
         return cell;
@@ -55,7 +93,9 @@ public sealed class SimulationEngine
 
     // ── main update ───────────────────────────────────────────────────────────
 
-    /// <summary>Advance the simulation by <paramref name="dt"/> seconds.</summary>
+    /// <summary>Advance the simulation by <paramref name="dt"/> seconds.
+    /// Set <see cref="PlayerInputDirection"/> before calling this if the player is active.
+    /// </summary>
     public void Step(float dt)
     {
         ElapsedTime += dt;
@@ -110,8 +150,8 @@ public sealed class SimulationEngine
             dragMult *= SimConstants.SlipperyMembraneMultiplier;
         }
 
-        var drag = SimConstants.DragBase * dragMult;
-        cell.Velocity     = cell.Velocity.MoveToward(Vec2.Zero, drag * dt);
+        var drag = _dragBase * dragMult;
+        cell.Velocity        = cell.Velocity.MoveToward(Vec2.Zero, drag * dt);
         cell.AngularVelocity = MathF.CopySign(
             Math.Max(0f, MathF.Abs(cell.AngularVelocity) - SimConstants.AngularDrag * dt),
             cell.AngularVelocity);
@@ -120,21 +160,21 @@ public sealed class SimulationEngine
         var turbMult = env == EnvironmentType.Turbulent
             ? SimConstants.TurbulentMovementMultiplier
             : 1f;
-        var push = SimConstants.RandomPushMax * turbMult;
+        var push = _randomPushMax * turbMult;
         cell.Velocity = new Vec2(
             cell.Velocity.X + RandF(-push, push) * dt,
             cell.Velocity.Y + RandF(-push, push) * dt);
         cell.AngularVelocity += RandF(-0.4f, 0.4f) * turbMult * dt;
 
-        // Engine activation (autonomous / sensor-guided)
+        // Engine activation (player-controlled or autonomous)
         ActivateEngines(cell, dt);
 
         // Integrate
         cell.Position = new Vec2(
             Math.Clamp(cell.Position.X + cell.Velocity.X * dt,
-                       SimConstants.CellHalfSize, ArenaWidth  - SimConstants.CellHalfSize),
+                       _cellHalfSize, ArenaWidth  - _cellHalfSize),
             Math.Clamp(cell.Position.Y + cell.Velocity.Y * dt,
-                       SimConstants.CellHalfSize, ArenaHeight - SimConstants.CellHalfSize));
+                       _cellHalfSize, ArenaHeight - _cellHalfSize));
         cell.Rotation = WrapAngle(cell.Rotation + cell.AngularVelocity * dt);
 
         // Food collection
@@ -194,17 +234,19 @@ public sealed class SimulationEngine
             cell.FoodCollectedForDup = 0;
             cell.DuplicationCount++;
 
-            var offset = new Vec2(RandF(-SimConstants.CellHalfSize * 3, SimConstants.CellHalfSize * 3),
-                                  RandF(-SimConstants.CellHalfSize * 3, SimConstants.CellHalfSize * 3));
+            var offset = new Vec2(
+                RandF(-_cellHalfSize * 3, _cellHalfSize * 3),
+                RandF(-_cellHalfSize * 3, _cellHalfSize * 3));
             var daughter = new CellState
             {
-                Name       = $"{cell.Name}'",
-                Blueprint  = cell.Blueprint,
-                Position   = new Vec2(
-                    Math.Clamp(cell.Position.X + offset.X, SimConstants.CellHalfSize, ArenaWidth  - SimConstants.CellHalfSize),
-                    Math.Clamp(cell.Position.Y + offset.Y, SimConstants.CellHalfSize, ArenaHeight - SimConstants.CellHalfSize)),
-                Rotation   = WrapAngle(cell.Rotation + MathF.PI),
-                Food       = cell.Food * 0.5f
+                Name      = $"{cell.Name}'",
+                Blueprint = cell.Blueprint,
+                IsPlayer  = false, // daughters are always autonomous
+                Position  = new Vec2(
+                    Math.Clamp(cell.Position.X + offset.X, _cellHalfSize, ArenaWidth  - _cellHalfSize),
+                    Math.Clamp(cell.Position.Y + offset.Y, _cellHalfSize, ArenaHeight - _cellHalfSize)),
+                Rotation  = WrapAngle(cell.Rotation + MathF.PI),
+                Food      = cell.Food * 0.5f
             };
             cell.Food *= 0.5f;
             newCells.Add(daughter);
@@ -213,7 +255,7 @@ public sealed class SimulationEngine
 
     private void RunTick(CellState cell)
     {
-        var env = GetEnvironment(cell.Position);
+        var env       = GetEnvironment(cell.Position);
         var drainMult = env == EnvironmentType.Toxic ? SimConstants.ToxicDrainMultiplier : 1f;
         cell.Food -= SimConstants.PassiveFoodDrain * drainMult;
 
@@ -238,11 +280,10 @@ public sealed class SimulationEngine
             }
 
             // Food vision: food directly in forward arc
-            var ahead = new Vec2(0f, -SimConstants.CellHalfSize * 4f).Rotated(cell.Rotation);
-            var aheadPos = cell.Position + ahead;
+            var aheadPos = cell.Position + new Vec2(0f, -_cellHalfSize * 4f).Rotated(cell.Rotation);
             foreach (var food in _foods)
             {
-                if (food.DistanceSq(aheadPos) < (SimConstants.CellHalfSize * 3f) * (SimConstants.CellHalfSize * 3f))
+                if (food.DistanceSq(aheadPos) < (_cellHalfSize * 3f) * (_cellHalfSize * 3f))
                 {
                     return true;
                 }
@@ -263,32 +304,59 @@ public sealed class SimulationEngine
             var grad = _gradients.ToxicGradAt(cell.Position, ArenaWidth, ArenaHeight);
             if (grad > 0.001f)
             {
-                return true; // consider moving away — engine steering not implemented for inverse links
+                return true;
             }
         }
 
         return false;
     }
 
+    /// <summary>
+    /// Activates movement organelles for a cell.
+    /// Player cells are steered by <see cref="PlayerInputDirection"/>; AI cells steer
+    /// autonomously using sensors and random activation.
+    /// </summary>
     private void ActivateEngines(CellState cell, float dt)
     {
-        // Determine forward direction (toward nearest food or current heading)
-        var forward = new Vec2(0f, -1f).Rotated(cell.Rotation);
-        var nearest = FindNearestFood(cell.Position);
-        if (nearest.HasValue)
+        Vec2 forward;
+
+        if (cell.IsPlayer)
         {
-            var dir = (nearest.Value - cell.Position).Normalized();
-            // Steer toward food
-            var targetAngle = MathF.Atan2(dir.Y, dir.X) + MathF.PI * 0.5f;
-            cell.Rotation = LerpAngle(cell.Rotation, targetAngle, dt * 3f);
+            var input = PlayerInputDirection;
+            if (input.LengthSq > 0.01f)
+            {
+                // Player-directed movement: steer toward input direction
+                var targetAngle = MathF.Atan2(input.Y, input.X) + MathF.PI * 0.5f;
+                cell.Rotation   = LerpAngle(cell.Rotation, targetAngle, dt * 5f);
+
+                // Apply a direct velocity impulse scaled the same as engine organelles
+                var speedBoost = _engineSpeed * SimConstants.PlayerSpeedMultiplier * dt;
+                cell.Velocity  = cell.Velocity + input.Normalized() * speedBoost;
+            }
+
+            // Player cells also benefit from their organelles firing autonomously
+            // (same probability as AI cells), so fall through to engine logic below.
             forward = new Vec2(0f, -1f).Rotated(cell.Rotation);
         }
+        else
+        {
+            // AI: steer toward nearest food
+            forward = new Vec2(0f, -1f).Rotated(cell.Rotation);
+            var nearest = FindNearestFood(cell.Position);
+            if (nearest.HasValue)
+            {
+                var dir         = (nearest.Value - cell.Position).Normalized();
+                var targetAngle = MathF.Atan2(dir.Y, dir.X) + MathF.PI * 0.5f;
+                cell.Rotation   = LerpAngle(cell.Rotation, targetAngle, dt * 3f);
+                forward         = new Vec2(0f, -1f).Rotated(cell.Rotation);
+            }
+        }
 
-        // Random Engine: 50% chance each T → probability per frame
+        // Random Engine: 50% chance each T → per-frame probability
         if (cell.Blueprint.RandomEngineCount > 0 &&
             _rng.NextDouble() < 0.5 * dt / SimConstants.TickInterval)
         {
-            cell.Velocity = cell.Velocity + forward * (SimConstants.RandomEngineSpeed * cell.Blueprint.RandomEngineCount);
+            cell.Velocity = cell.Velocity + forward * (_randomEngineSpeed * cell.Blueprint.RandomEngineCount);
             cell.Food    -= SimConstants.RandomEngineFoodCost * cell.Blueprint.RandomEngineCount;
         }
 
@@ -299,7 +367,7 @@ public sealed class SimulationEngine
                            _rng.NextDouble() < 0.5 * dt / SimConstants.TickInterval;
             if (activate)
             {
-                cell.Velocity = cell.Velocity + forward * (SimConstants.EffectiveEngineSpeed * cell.Blueprint.EffectiveEngineCount);
+                cell.Velocity = cell.Velocity + forward * (_effectiveEngineSpeed * cell.Blueprint.EffectiveEngineCount);
                 cell.Food    -= SimConstants.EffectiveEngineFoodCost * cell.Blueprint.EffectiveEngineCount;
             }
         }
@@ -311,7 +379,7 @@ public sealed class SimulationEngine
                            _rng.NextDouble() < 0.5 * dt / SimConstants.TickInterval;
             if (activate)
             {
-                cell.Velocity = cell.Velocity + forward * (SimConstants.EngineSpeed * cell.Blueprint.EngineCount);
+                cell.Velocity = cell.Velocity + forward * (_engineSpeed * cell.Blueprint.EngineCount);
                 cell.Food    -= SimConstants.EngineFoodCost * cell.Blueprint.EngineCount;
             }
         }
@@ -319,9 +387,8 @@ public sealed class SimulationEngine
 
     private void CollectFood(CellState cell, EnvironmentType env)
     {
-        var mult = env == EnvironmentType.Nutritious ? SimConstants.NutritiousFoodMultiplier : 1f;
-        var touchSq = (SimConstants.CellHalfSize + SimConstants.FoodHalfSize) *
-                      (SimConstants.CellHalfSize + SimConstants.FoodHalfSize);
+        var mult    = env == EnvironmentType.Nutritious ? SimConstants.NutritiousFoodMultiplier : 1f;
+        var touchSq = (_cellHalfSize + _foodHalfSize) * (_cellHalfSize + _foodHalfSize);
 
         for (var i = _foods.Count - 1; i >= 0; i--)
         {
@@ -336,7 +403,7 @@ public sealed class SimulationEngine
 
     private void ResolveCollisions()
     {
-        var minDist = SimConstants.CellHalfSize * 2f;
+        var minDist = _cellHalfSize * 2f;
 
         for (var i = 0; i < _cells.Count; i++)
         {
@@ -352,13 +419,13 @@ public sealed class SimulationEngine
                     continue;
                 }
 
-                var delta = _cells[j].Position - _cells[i].Position;
+                var delta  = _cells[j].Position - _cells[i].Position;
                 var distSq = delta.LengthSq;
 
                 if (distSq < minDist * minDist && distSq > 1e-6f)
                 {
-                    var dist   = MathF.Sqrt(distSq);
-                    var normal = delta / dist;
+                    var dist    = MathF.Sqrt(distSq);
+                    var normal  = delta / dist;
                     var overlap = (minDist - dist) * 0.5f;
 
                     _cells[i].Position = _cells[i].Position - normal * overlap;
@@ -386,7 +453,7 @@ public sealed class SimulationEngine
         }
 
         Vec2 pos;
-        // Spawn twice as often in nutritious zone
+        // Prefer nutritious zone for spawning (30% of the time)
         var nutriZone = _zones.FirstOrDefault(z => z.Type == EnvironmentType.Nutritious);
         if (nutriZone is not null && _rng.NextDouble() < 0.3)
         {
@@ -443,10 +510,10 @@ public sealed class SimulationEngine
 
     private static List<EnvironmentZone> BuildDefaultZones(float w, float h) =>
     [
-        new EnvironmentZone { X = 0,           Y = 0,           W = w * 0.3f, H = h * 0.4f, Type = EnvironmentType.Viscous    },
-        new EnvironmentZone { X = w * 0.7f,    Y = 0,           W = w * 0.3f, H = h * 0.4f, Type = EnvironmentType.Toxic      },
-        new EnvironmentZone { X = 0,           Y = h * 0.6f,    W = w * 0.3f, H = h * 0.4f, Type = EnvironmentType.Turbulent  },
-        new EnvironmentZone { X = w * 0.7f,    Y = h * 0.6f,    W = w * 0.3f, H = h * 0.4f, Type = EnvironmentType.Nutritious }
+        new EnvironmentZone { X = 0,        Y = 0,        W = w * 0.3f, H = h * 0.4f, Type = EnvironmentType.Viscous    },
+        new EnvironmentZone { X = w * 0.7f, Y = 0,        W = w * 0.3f, H = h * 0.4f, Type = EnvironmentType.Toxic      },
+        new EnvironmentZone { X = 0,        Y = h * 0.6f, W = w * 0.3f, H = h * 0.4f, Type = EnvironmentType.Turbulent  },
+        new EnvironmentZone { X = w * 0.7f, Y = h * 0.6f, W = w * 0.3f, H = h * 0.4f, Type = EnvironmentType.Nutritious }
     ];
 
     // ── math helpers ──────────────────────────────────────────────────────────
@@ -476,11 +543,10 @@ public sealed class SimulationEngine
             return null;
         }
 
-        var ordered = _cells
+        return _cells
             .OrderByDescending(c => c.FoodCollectedForDup)
             .ThenByDescending(c => c.Food)
-            .ToList();
-        return ordered[0];
+            .First();
     }
 
     public int AliveCellCount => _cells.Count(c => c.Alive);

@@ -1,5 +1,3 @@
-namespace SpaceCrawlerSimulation;
-
 /// <summary>
 /// Shared simulation constants matching the design rules document.
 /// </summary>
@@ -82,4 +80,11 @@ public static class SimConstants
 
     /// <summary>Slippery Membrane drag reduction multiplier (halves drag).</summary>
     public const float SlipperyMembraneMultiplier = 0.5f;
+
+    /// <summary>
+    /// Direct-control speed multiplier for player cells.
+    /// The player's velocity impulse per frame = EngineSpeed × PlayerSpeedMultiplier × dt.
+    /// Tuned so player movement feels responsive at both console and pixel scales.
+    /// </summary>
+    public const float PlayerSpeedMultiplier = 10f;
 }

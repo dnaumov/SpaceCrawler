@@ -1,5 +1,3 @@
-using SpaceCrawlerSimulation;
-
 // ┌─────────────────────────────────────────────────────────────────────────────┐
 // │  SpaceCrawler – Standalone Simulation Console App                          │
 // │                                                                             │
@@ -23,21 +21,23 @@ Console.WriteLine();
 
 var sim = new SimulationEngine(seed: seed);
 
-// ── player cell (simple food-sensor + effective-engine blueprint) ──────────────
-var playerGrid = new OrganelleType[16];
+// ── reference cell (food-sensor + effective-engine blueprint, autonomously controlled) ──
+// Note: the console runner has no keyboard input; IsPlayer=false means the cell uses
+// the autonomous AI engine logic just like the AI competitors.
+var referenceGrid = new OrganelleType[16];
 foreach (var idx in CellBlueprint.NucleusIndices)
 {
-    playerGrid[idx] = OrganelleType.Nucleus;
+    referenceGrid[idx] = OrganelleType.Nucleus;
 }
-playerGrid[0]  = OrganelleType.FoodGradientDetector;
-playerGrid[1]  = OrganelleType.EffectiveEngine;
-playerGrid[14] = OrganelleType.EffectiveEngine;
-playerGrid[15] = OrganelleType.Mitochondria;
-var playerBp = new CellBlueprint(playerGrid);
+referenceGrid[0]  = OrganelleType.FoodGradientDetector;
+referenceGrid[1]  = OrganelleType.EffectiveEngine;
+referenceGrid[14] = OrganelleType.EffectiveEngine;
+referenceGrid[15] = OrganelleType.Mitochondria;
+var referenceBp = new CellBlueprint(referenceGrid);
 
-sim.CreateCell("Player", new Vec2(SimConstants.ArenaWidth * 0.5f, SimConstants.ArenaHeight * 0.5f), playerBp);
-Console.WriteLine($"  Player blueprint: {playerBp.Describe()}");
-Console.WriteLine($"  Player elements: {playerBp.ElementCount}, duplicates at: {playerBp.FoodForDuplication} food");
+sim.CreateCell("Reference", new Vec2(SimConstants.ArenaWidth * 0.5f, SimConstants.ArenaHeight * 0.5f), referenceBp, isPlayer: false);
+Console.WriteLine($"  Reference blueprint: {referenceBp.Describe()}");
+Console.WriteLine($"  Reference elements: {referenceBp.ElementCount}, duplicates at: {referenceBp.FoodForDuplication} food");
 
 // ── AI cells (random blueprints) ──────────────────────────────────────────────
 var rng = new Random(seed + 1);

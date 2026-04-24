@@ -1,5 +1,3 @@
-namespace SpaceCrawlerSimulation;
-
 /// <summary>Environment types that affect cell behaviour.</summary>
 public enum EnvironmentType
 {

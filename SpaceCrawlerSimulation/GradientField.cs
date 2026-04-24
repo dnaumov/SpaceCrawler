@@ -1,5 +1,3 @@
-namespace SpaceCrawlerSimulation;
-
 /// <summary>
 /// Gradient field calculated over the arena grid each simulation tick.
 /// Food gradients:  SUM[ 1 / distSq ]

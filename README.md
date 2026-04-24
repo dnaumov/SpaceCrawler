@@ -19,9 +19,8 @@ SpaceCrawler/                          ← Godot game project
     Core/
       ScenePaths.cs                    ← Shared scene path constants
     Simulation/
-      GameplaySimulation.cs            ← Main gameplay scene logic
-      OrganelleType.cs                 ← Organelle enum + metadata helpers
-      CellBlueprint.cs                 ← Cell organelle-grid data model
+      GameplaySimulation.cs            ← Thin Godot wrapper: input, rendering, HUD
+                                          (all rules live in SimulationEngine)
     UI/
       OrganismBuilderScene.cs          ← Builder scene controller
       GridNodeSlot.cs                  ← Drag-and-drop grid slot widget
@@ -33,19 +32,26 @@ SpaceCrawler/                          ← Godot game project
   OrganismBuilder.tscn                 ← Builder scene
   Menu.tscn                            ← Main menu scene
 
-SpaceCrawlerSimulation/                ← Standalone C# console simulation
-  Program.cs                           ← Entry point (CLI args: duration aiCount seed)
-  SimulationEngine.cs                  ← Pure-C# engine with all game rules
+SpaceCrawlerSimulation/                ← Shared pure-C# simulation library (no Godot)
+  SimulationEngine.cs                  ← All game rules (food, drag, collisions, …)
   SimConstants.cs                      ← All numeric constants
-  OrganelleType.cs                     ← Organelle enum (no Godot dependency)
+  OrganelleType.cs                     ← Organelle enum + serialization helpers
   CellBlueprint.cs                     ← Cell blueprint data model
   CellState.cs                         ← Mutable runtime cell state
   Vec2.cs                              ← 2D vector math
   EnvironmentZone.cs                   ← Environment zone types
   GradientField.cs                     ← Grid-based gradient calculations
 
-SpaceCrawler.sln                       ← Solution file (both projects)
+SpaceCrawlerSimulation.Runner/         ← Thin console entry point
+  Program.cs                           ← CLI args (duration aiCount seed), prints results
+
+SpaceCrawler.sln                       ← Solution file (all three projects)
 ```
+
+> **Design principle**: `SpaceCrawlerSimulation` is a class library referenced by both the
+> Godot game (`SpaceCrawler.csproj`) and the console runner
+> (`SpaceCrawlerSimulation.Runner.csproj`).  Game rules live in exactly one place —
+> `SimulationEngine` — and are exercised identically in both contexts.
 
 ## 3. Gameplay rules
 
@@ -97,14 +103,15 @@ Sensory organelles check these gradient values to decide whether to activate the
 ## 4. Running the console simulation
 
 ```
-cd SpaceCrawlerSimulation
+cd SpaceCrawlerSimulation.Runner
 dotnet run -- [durationSeconds] [aiCount] [seed]
 
 # Example: 120-second match, 3 AI cells, seed 42
 dotnet run -- 120 3 42
 ```
 
-The console app runs the complete rule-set (food model, drag, collisions, environments, gradients, organelle activation) and prints per-tick standings and a final result.
+The runner delegates entirely to `SimulationEngine` in `SpaceCrawlerSimulation` — the same
+engine the Godot game uses — and prints per-tick standings plus a final result.
 
 ## 5. Recommended scene layout
 

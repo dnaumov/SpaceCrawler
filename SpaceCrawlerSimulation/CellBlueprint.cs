@@ -1,5 +1,3 @@
-namespace SpaceCrawlerSimulation;
-
 /// <summary>
 /// Immutable snapshot of a cell's 4×4 organelle grid.
 /// Grid layout (0-indexed row-major):

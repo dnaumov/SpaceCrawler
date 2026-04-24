@@ -1,5 +1,3 @@
-namespace SpaceCrawlerSimulation;
-
 /// <summary>
 /// All organelle types available in the cell builder.
 /// Mirrors the Godot-project OrganelleType enum (no Godot dependency here).
@@ -57,6 +55,35 @@ public static class OrganelleTypeExtensions
     public static bool IsSensor(this OrganelleType t) =>
         t is OrganelleType.CellsGradientDetector or OrganelleType.FoodGradientDetector
             or OrganelleType.ToxicGradientDetector or OrganelleType.FoodVision;
+
+    /// <summary>Canonical name used in JSON serialization and scene component names.</summary>
+    public static string SerializedName(this OrganelleType t) => t.ToString();
+
+    public static OrganelleType FromSerializedName(string name)
+    {
+        if (Enum.TryParse<OrganelleType>(name, out var result))
+        {
+            return result;
+        }
+
+        // Legacy display-name fallback for configs created before the rename
+        return name switch
+        {
+            "Random Engine"  => OrganelleType.RandomEngine,
+            "Eff. Engine"    => OrganelleType.EffectiveEngine,
+            "Engine"         => OrganelleType.Engine,
+            "Mitochondria"   => OrganelleType.Mitochondria,
+            "Chloroplast"    => OrganelleType.Chloroplast,
+            "Ribosome"       => OrganelleType.Ribosome,
+            "Cell Sensor"    => OrganelleType.CellsGradientDetector,
+            "Food Sensor"    => OrganelleType.FoodGradientDetector,
+            "Toxic Sensor"   => OrganelleType.ToxicGradientDetector,
+            "Food Vision"    => OrganelleType.FoodVision,
+            "Slip. Membrane" => OrganelleType.SlipperyMembrane,
+            "Toxin Prod."    => OrganelleType.ToxinProducer,
+            _                => OrganelleType.Empty
+        };
+    }
 
     public static OrganelleType FromName(string name) =>
         Enum.TryParse<OrganelleType>(name, out var r) ? r : OrganelleType.Empty;

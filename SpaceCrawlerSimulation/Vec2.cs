@@ -1,5 +1,3 @@
-namespace SpaceCrawlerSimulation;
-
 /// <summary>2D vector with basic arithmetic.</summary>
 public readonly record struct Vec2(float X, float Y)
 {
