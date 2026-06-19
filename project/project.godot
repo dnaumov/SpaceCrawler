@@ -11,8 +11,8 @@ config_version=5
 [application]
 
 config/name="SpaceCrawler"
-run/main_scene="uid://dhn1h1cwr3u7s"
-config/features=PackedStringArray("4.5", "Mobile")
+run/main_scene="uid://bc0tr8hjsg7we"
+config/features=PackedStringArray("4.5", "C#", "Mobile")
 config/icon="res://icon.svg"
 
 [dotnet]

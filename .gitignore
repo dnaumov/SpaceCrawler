@@ -1,24 +1,24 @@
 # Godot 4+ specific ignores
-.godot/
-/android/
+project/.godot/
+project/android/
 
 # Godot-specific ignores
-.import/
-export.cfg
-export_credentials.cfg
+project/.import/
+project/export.cfg
+project/export_credentials.cfg
 
 # Imported translations (automatically generated from CSV files)
 *.translation
 
 # Mono-specific ignores
-.mono/
-data_*/
+project/.mono/
+project/data_*/
 mono_crash.*.json
 
 # Visual Studio cache files
-vs/
+project/vs/
 # Visual Studio 2015/2017 cache/options directory
-.vs/
+project/.vs/
 
 # Others
 *.log
@@ -69,8 +69,9 @@ vs/
 *.pidb
 *.svclog
 *.scc
+
 # Console simulation build output
-SpaceCrawlerSimulation/bin/
-SpaceCrawlerSimulation/obj/
-SpaceCrawlerSimulation.Runner/bin/
-SpaceCrawlerSimulation.Runner/obj/
+project/SpaceCrawlerSimulation/bin/
+project/SpaceCrawlerSimulation/obj/
+project/SpaceCrawlerSimulation.Runner/bin/
+project/SpaceCrawlerSimulation.Runner/obj/
