@@ -16,6 +16,7 @@ project/data_*/
 mono_crash.*.json
 
 # Visual Studio cache files
+/.vs/
 project/vs/
 # Visual Studio 2015/2017 cache/options directory
 project/.vs/
