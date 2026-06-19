@@ -8,4 +8,12 @@
     <!-- Shared pure-C# simulation logic (no Godot dependency) -->
     <ProjectReference Include="SpaceCrawlerSimulation/SpaceCrawlerSimulation.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- These projects and Godot's cache live below the game project directory.
+         Exclude their sources and generated files from this project's default
+         recursive Compile glob; the simulation is consumed via ProjectReference. -->
+    <Compile Remove="SpaceCrawlerSimulation/**/*.cs" />
+    <Compile Remove="SpaceCrawlerSimulation.Runner/**/*.cs" />
+    <Compile Remove=".godot/**/*.cs" />
+  </ItemGroup>
 </Project>
