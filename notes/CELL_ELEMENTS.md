@@ -91,4 +91,4 @@ Row 3:  12   13   14   15
 
 ---
 
-> For full game rules and constants see [`README.md`](README.md).
+> For full game rules and constants, see [`Design.md`](../Design.md).
