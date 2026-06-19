@@ -17,8 +17,10 @@ public partial class GridNodeSlot : PanelContainer
 
 	public override void _Ready()
 	{
+		MouseFilter = MouseFilterEnum.Stop;
 		CustomMinimumSize = new Vector2(SlotMinWidth, SlotMinHeight);
 		_contentLabel = GetNode<Label>("ContentLabel");
+		_contentLabel.MouseFilter = MouseFilterEnum.Ignore;
 		UpdateLabel();
 	}
 

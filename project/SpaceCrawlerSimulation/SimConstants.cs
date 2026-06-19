@@ -30,8 +30,11 @@ public static class SimConstants
     /// <summary>Base drag (speed units lost per second).</summary>
     public const float DragBase = 2.5f;
 
-    /// <summary>Maximum random push applied per second (passive cell movement).</summary>
-    public const float RandomPushMax = 1.8f;
+    /// <summary>Maximum random linear impulse applied per second (passive cell movement).</summary>
+    public const float RandomPushMax = 6f;
+
+    /// <summary>Maximum random angular impulse applied per second (passive cell rotation).</summary>
+    public const float RandomAngularPushMax = 3f;
 
     /// <summary>Angular drag (rad/s² loss per second).</summary>
     public const float AngularDrag = 1.5f;

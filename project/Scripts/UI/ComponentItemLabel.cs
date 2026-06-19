@@ -10,6 +10,9 @@ public string SourceList { get; set; } = "available";
 
 public override void _Ready()
 {
+MouseFilter = MouseFilterEnum.Stop;
+MouseDefaultCursorShape = CursorShape.Drag;
+
 if (string.IsNullOrEmpty(ComponentName))
 {
 ComponentName = Text;

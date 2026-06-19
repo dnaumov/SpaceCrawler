@@ -143,24 +143,6 @@ $"Organelles placed: {nonNucleusPlaced}/{GridNodeCount - CellBlueprint.NucleusIn
 $"| Cell elements: {placedCount}/16 | Duplicates at {dupThreshold} food";
 }
 
-private int FindComponentNode(string componentName)
-{
-for (var nodeIndex = 0; nodeIndex < GridNodeCount; nodeIndex++)
-{
-if (IsNucleusIndex(nodeIndex))
-{
-continue;
-}
-
-if (_gridComponents[nodeIndex] == componentName)
-{
-return nodeIndex;
-}
-}
-
-return -1;
-}
-
 private void OnComponentDroppedToGridNode(int targetNodeIndex, string componentName, string sourceList, int sourceNodeIndex)
 {
 if (targetNodeIndex < 0 || targetNodeIndex >= GridNodeCount)
@@ -176,18 +158,6 @@ return;
 
 if (sourceList == "available")
 {
-var currentNodeIndex = FindComponentNode(componentName);
-if (currentNodeIndex >= 0)
-{
-if (currentNodeIndex == targetNodeIndex)
-{
-_statusLabel.Text = $"{componentName} is already on node {targetNodeIndex + 1}.";
-return;
-}
-
-_gridComponents[currentNodeIndex] = string.Empty;
-}
-
 _gridComponents[targetNodeIndex] = componentName;
 RefreshGridState();
 return;

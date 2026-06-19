@@ -30,7 +30,7 @@ public partial class GameplaySimulation : Node2D
 	private Timer  _matchTimer  = default!;
 	private Label  _hudTimer    = default!;
 	private Label  _hudStatus   = default!;
-	private Label  _hudScoreboard = default!;
+	private RichTextLabel _hudScoreboard = default!;
 	private bool   _matchEnded;
 	private readonly RandomNumberGenerator _rng = new();
 
@@ -102,16 +102,7 @@ public partial class GameplaySimulation : Node2D
 		var cellHalf = SimConstants.CellHalfSize * UnitScale;
 		foreach (var cell in _engine.Cells)
 		{
-			var color = GetCellColor(cell);
-			if (!cell.Alive)
-			{
-				color.A = 0.3f;
-			}
-			else if (cell.Food < 0f)
-			{
-				color = color.Lerp(new Color(1f, 0.2f, 0.2f),
-								   Mathf.Clamp(-cell.Food / 4f, 0f, 1f));
-			}
+			var color = GetRenderedCellColor(cell);
 
 			DrawSetTransform(V(cell.Position), cell.Rotation);
 			DrawRect(new Rect2(-Vector2.One * cellHalf, Vector2.One * (cellHalf * 2f)), color, true);
@@ -236,7 +227,14 @@ public partial class GameplaySimulation : Node2D
 
 		_hudTimer       = new Label { Position = new Vector2(12f, 8f) };
 		_hudStatus      = new Label { Position = new Vector2(12f, 32f) };
-		_hudScoreboard  = new Label { Position = new Vector2(12f, 56f) };
+		_hudScoreboard = new RichTextLabel
+		{
+			Position = new Vector2(12f, 56f),
+			Size = new Vector2(520f, 360f),
+			BbcodeEnabled = true,
+			FitContent = true,
+			ScrollActive = false
+		};
 
 		canvas.AddChild(_hudTimer);
 		canvas.AddChild(_hudStatus);
@@ -276,8 +274,9 @@ public partial class GameplaySimulation : Node2D
 		foreach (var cell in standings)
 		{
 			var suffix = cell.Alive ? string.Empty : " [DEAD]";
-			lines.Add($"- {cell.Name}: {cell.FoodCollectedForDup} / {cell.Food:F1} " +
-					  $"[{cell.Blueprint.ElementCount} elements]{suffix}");
+			var color = GetRenderedCellColor(cell).ToHtml();
+			lines.Add($"[color=#{color}]- {cell.Name}: {cell.FoodCollectedForDup} / {cell.Food:F1} " +
+					  $"[{cell.Blueprint.ElementCount} elements]{suffix}[/color]");
 		}
 
 		_hudScoreboard.Text = string.Join('\n', lines);
@@ -299,6 +298,22 @@ public partial class GameplaySimulation : Node2D
 		var newColor = Color.FromHsv(_rng.Randf(), 0.65f, 0.95f);
 		_cellColors[cell] = newColor;
 		return newColor;
+	}
+
+	private Color GetRenderedCellColor(CellState cell)
+	{
+		var color = GetCellColor(cell);
+		if (!cell.Alive)
+		{
+			color.A = 0.3f;
+		}
+		else if (cell.Food < 0f)
+		{
+			color = color.Lerp(new Color(1f, 0.2f, 0.2f),
+				Mathf.Clamp(-cell.Food / 4f, 0f, 1f));
+		}
+
+		return color;
 	}
 
 	// ── blueprint loading ─────────────────────────────────────────────────────

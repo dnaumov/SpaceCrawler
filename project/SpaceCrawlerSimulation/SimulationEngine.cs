@@ -164,7 +164,8 @@ public sealed class SimulationEngine
         cell.Velocity = new Vec2(
             cell.Velocity.X + RandF(-push, push) * dt,
             cell.Velocity.Y + RandF(-push, push) * dt);
-        cell.AngularVelocity += RandF(-0.4f, 0.4f) * turbMult * dt;
+        var angularPush = SimConstants.RandomAngularPushMax * turbMult;
+        cell.AngularVelocity += RandF(-angularPush, angularPush) * dt;
 
         // Engine activation (player-controlled or autonomous)
         ActivateEngines(cell, dt);

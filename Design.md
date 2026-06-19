@@ -22,7 +22,7 @@ The full organelle catalogue is in [`notes/CELL_ELEMENTS.md`](notes/CELL_ELEMENT
 - A cell dies when its food reaches its negative survival limit. The base limit is -4, and each Mitochondria extends it by one.
 - Movement loses speed over time through drag.
 - Cell collisions produce an elastic bounce.
-- Cells receive small random movement and rotation impulses.
+- Cells receive noticeable random movement and rotation impulses.
 - Movement organelles apply force outward from the nucleus.
 
 ## Scale and constants
@@ -63,4 +63,3 @@ An environment affects a cell when more than half of the cell is inside its zone
 ## Progression
 
 Matches should award resources or points used to unlock organelles and new environments. Progression should broaden viable strategies rather than only increase raw power. Exact economy and unlock pacing remain to be designed.
-

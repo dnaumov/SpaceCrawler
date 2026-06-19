@@ -5,6 +5,12 @@ public partial class RemoveDropZone : PanelContainer
 [Signal]
 public delegate void ComponentRemovedEventHandler(string componentName, string sourceList, int sourceNodeIndex);
 
+public override void _Ready()
+{
+MouseFilter = MouseFilterEnum.Stop;
+GetNode<Label>("RemoveLabel").MouseFilter = MouseFilterEnum.Ignore;
+}
+
 public override bool _CanDropData(Vector2 atPosition, Variant data)
 {
 return DragPayload.TryRead(data, out _, out var sourceList, out _) && sourceList == "grid";
