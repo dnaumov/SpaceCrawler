@@ -6,6 +6,12 @@
 // │  Example: SpaceCrawlerSimulation 120 3 42                                   │
 // └─────────────────────────────────────────────────────────────────────────────┘
 
+if (args.Length > 0 && args[0].Equals("genetic", StringComparison.OrdinalIgnoreCase))
+{
+    GeneticAlgorithmRunner.Run(args.Skip(1).ToArray());
+    return;
+}
+
 var matchDuration = args.Length >= 1 && float.TryParse(args[0], out var d) ? d : 120f;
 var aiCount       = args.Length >= 2 && int.TryParse(args[1], out var n)   ? n : 3;
 var seed          = args.Length >= 3 && int.TryParse(args[2], out var s)   ? s : 42;

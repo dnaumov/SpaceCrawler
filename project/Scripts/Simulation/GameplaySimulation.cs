@@ -240,12 +240,31 @@ public partial class GameplaySimulation : Node2D
 		canvas.AddChild(_hudStatus);
 		canvas.AddChild(_hudScoreboard);
 
+		var restartButton = new Button
+		{
+			Position = new Vector2(ArenaSize.X - 180f, 40f),
+			Size = new Vector2(168f, 40f),
+			Text = "Restart in Builder"
+		};
+		restartButton.Pressed += OnRestartInBuilderPressed;
+		canvas.AddChild(restartButton);
+
 		var legend = new Label
 		{
 			Position = new Vector2(ArenaSize.X - 220f, 8f),
 			Text = "Zones: [Viscous] [Toxic] [Turbulent] [Nutritious]"
 		};
 		canvas.AddChild(legend);
+	}
+
+	private void OnRestartInBuilderPressed()
+	{
+		_matchTimer.Stop();
+		var error = GetTree().ChangeSceneToFile(ScenePaths.OrganismBuilder);
+		if (error != Error.Ok)
+		{
+			GD.PushError($"Failed to return to builder scene: {error}");
+		}
 	}
 
 	private void UpdateHud()

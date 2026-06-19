@@ -21,6 +21,7 @@ public override void _Ready()
 BindUiNodes();
 BindGridSlots();
 InitNucleusSlots();
+LoadConfiguredOrganismFromJson();
 _removeDropZone.ComponentRemoved += OnComponentRemovedFromGrid;
 _startGameplayButton.Pressed += OnStartGameplayPressed;
 RefreshGridState();
@@ -217,6 +218,54 @@ var error = GetTree().ChangeSceneToFile(ScenePaths.Gameplay);
 if (error != Error.Ok)
 {
 GD.PushError($"Failed to load gameplay scene: {error}");
+}
+}
+
+private void LoadConfiguredOrganismFromJson()
+{
+if (!FileAccess.FileExists(OrganismConfigPath))
+{
+return;
+}
+
+using var file = FileAccess.Open(OrganismConfigPath, FileAccess.ModeFlags.Read);
+if (file is null)
+{
+GD.PushWarning($"Failed to open saved organism config: {OrganismConfigPath}.");
+return;
+}
+
+var json = new Json();
+if (json.Parse(file.GetAsText()) != Error.Ok || json.Data.VariantType != Variant.Type.Dictionary)
+{
+GD.PushWarning($"Saved organism config is invalid: {OrganismConfigPath}.");
+return;
+}
+
+var payload = json.Data.AsGodotDictionary();
+if (!payload.ContainsKey("components"))
+{
+return;
+}
+
+var components = payload["components"].AsGodotArray();
+if (components.Count < GridNodeCount)
+{
+GD.PushWarning($"Saved organism config has only {components.Count} grid entries.");
+return;
+}
+
+for (var nodeIndex = 0; nodeIndex < GridNodeCount; nodeIndex++)
+{
+if (IsNucleusIndex(nodeIndex))
+{
+continue;
+}
+
+var organelle = OrganelleTypeExtensions.FromSerializedName(components[nodeIndex].AsString());
+_gridComponents[nodeIndex] = organelle == OrganelleType.Empty
+? string.Empty
+: organelle.SerializedName();
 }
 }
 

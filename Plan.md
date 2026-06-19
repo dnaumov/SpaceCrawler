@@ -4,11 +4,12 @@
 
 - [x] **P0** Define the core rules, constants, organelles, match objective, and win conditions.
 - [x] **P0** Implement movement, drag, food collection, passive drain, death, and duplication.
-- [x] **P0** Implement cell collisions and passive random movement and rotation.
+- [x] **P0** Implement pass-through cell interactions and passive random movement and rotation.
 - [x] **P0** Implement viscous, toxic, turbulent, and nutritious environments.
 - [x] **P0** Implement gradient fields and organelle activation.
 - [x] **P1** Extract the rules into a shared pure C# simulation library.
 - [x] **P1** Add a configurable console simulation runner.
+- [x] **P1** Add genetic-algorithm balancing runs with selection, crossover, and mutation.
 
 ## Current milestone: Builder and opponents
 
@@ -24,4 +25,3 @@
 - [ ] **P1** Add a results screen and balancing tools.
 - [ ] **P2** Improve organelle and environment visuals and effects.
 - [ ] **P2** Add sound after the mechanics stabilize.
-

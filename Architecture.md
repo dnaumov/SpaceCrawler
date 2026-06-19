@@ -32,10 +32,20 @@ dotnet run -- [durationSeconds] [aiCount] [seed]
 
 Example: `dotnet run -- 120 3 42`
 
+The runner also supports evolutionary balancing runs:
+
+```powershell
+dotnet run -- genetic [generations] [population] [durationSeconds] [seed]
+```
+
+With no additional arguments, genetic mode evaluates 20 competing genomes over
+60-second matches for 100 generations. It preserves the two strongest genomes,
+selects parents by tournament, performs uniform crossover, and mutates organelle
+slots before the next match.
+
 ## Design boundaries
 
 - Simulation rules belong in `SpaceCrawlerSimulation`, not in Godot scene scripts.
 - Godot scripts adapt simulation state for presentation and player input.
 - Numeric gameplay constants should remain centralized in `SimConstants.cs`.
 - The console runner should remain thin and must not implement separate rules.
-

@@ -66,9 +66,6 @@ public static class SimConstants
     /// <summary>Toxin Producer costs 1 food every 2 ticks (20 s).</summary>
     public const float ToxinProducerCostInterval = 20f;
 
-    /// <summary>Elastic restitution coefficient for cell-cell collisions.</summary>
-    public const float CollisionRestitution = 0.4f;
-
     /// <summary>Viscous environment drag multiplier.</summary>
     public const float ViscousDragMultiplier = 2f;
 

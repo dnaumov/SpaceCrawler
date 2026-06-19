@@ -21,7 +21,7 @@ The full organelle catalogue is in [`notes/CELL_ELEMENTS.md`](notes/CELL_ELEMENT
 - Every 10 seconds, a cell passively consumes one food.
 - A cell dies when its food reaches its negative survival limit. The base limit is -4, and each Mitochondria extends it by one.
 - Movement loses speed over time through drag.
-- Cell collisions produce an elastic bounce.
+- Cells overlap and pass through each other without collision response.
 - Cells receive noticeable random movement and rotation impulses.
 - Movement organelles apply force outward from the nucleus.
 

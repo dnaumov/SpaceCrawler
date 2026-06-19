@@ -130,9 +130,6 @@ public sealed class SimulationEngine
         }
 
         _cells.AddRange(toAdd);
-
-        // Resolve cell-cell collisions
-        ResolveCollisions();
     }
 
     // ── cell physics & logic ──────────────────────────────────────────────────
@@ -398,48 +395,6 @@ public sealed class SimulationEngine
                 _foods.RemoveAt(i);
                 cell.Food += 1f * mult;
                 cell.FoodCollectedForDup += 1;
-            }
-        }
-    }
-
-    private void ResolveCollisions()
-    {
-        var minDist = _cellHalfSize * 2f;
-
-        for (var i = 0; i < _cells.Count; i++)
-        {
-            if (!_cells[i].Alive)
-            {
-                continue;
-            }
-
-            for (var j = i + 1; j < _cells.Count; j++)
-            {
-                if (!_cells[j].Alive)
-                {
-                    continue;
-                }
-
-                var delta  = _cells[j].Position - _cells[i].Position;
-                var distSq = delta.LengthSq;
-
-                if (distSq < minDist * minDist && distSq > 1e-6f)
-                {
-                    var dist    = MathF.Sqrt(distSq);
-                    var normal  = delta / dist;
-                    var overlap = (minDist - dist) * 0.5f;
-
-                    _cells[i].Position = _cells[i].Position - normal * overlap;
-                    _cells[j].Position = _cells[j].Position + normal * overlap;
-
-                    var relVel  = _cells[j].Velocity - _cells[i].Velocity;
-                    var impulse = Vec2.Dot(relVel, normal) * SimConstants.CollisionRestitution;
-                    if (impulse < 0)
-                    {
-                        _cells[i].Velocity = _cells[i].Velocity - normal * impulse;
-                        _cells[j].Velocity = _cells[j].Velocity + normal * impulse;
-                    }
-                }
             }
         }
     }
