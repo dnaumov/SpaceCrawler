@@ -38,14 +38,6 @@ public sealed class SimulationEngine
     public IReadOnlyList<Vec2>      Foods  => _foods;
     public IReadOnlyList<EnvironmentZone> Zones => _zones;
 
-    /// <summary>
-    /// Direction vector injected by the host application for the player-controlled cell.
-    /// Set this before calling <see cref="Step"/> each frame. The engine uses this for
-    /// movement of any cell whose <see cref="CellState.IsPlayer"/> flag is true.
-    /// A zero vector means no player input this frame (cell moves autonomously).
-    /// </summary>
-    public Vec2 PlayerInputDirection { get; set; }
-
     /// <param name="arenaW">Arena width in units matching <paramref name="unitScale"/>.</param>
     /// <param name="arenaH">Arena height in units matching <paramref name="unitScale"/>.</param>
     /// <param name="unitScale">
@@ -76,7 +68,7 @@ public sealed class SimulationEngine
 
     // ── population management ─────────────────────────────────────────────────
 
-    public CellState CreateCell(string name, Vec2 position, CellBlueprint blueprint, bool isPlayer = false)
+    public CellState CreateCell(string name, Vec2 position, CellBlueprint blueprint)
     {
         var cell = new CellState
         {
@@ -84,8 +76,7 @@ public sealed class SimulationEngine
             Blueprint = blueprint,
             Position  = position,
             Rotation  = (float)(_rng.NextDouble() * MathF.PI * 2),
-            Food      = blueprint.ElementCount * 0.5f,
-            IsPlayer  = isPlayer
+            Food      = blueprint.ElementCount * 0.5f
         };
         _cells.Add(cell);
         return cell;
@@ -93,9 +84,7 @@ public sealed class SimulationEngine
 
     // ── main update ───────────────────────────────────────────────────────────
 
-    /// <summary>Advance the simulation by <paramref name="dt"/> seconds.
-    /// Set <see cref="PlayerInputDirection"/> before calling this if the player is active.
-    /// </summary>
+    /// <summary>Advance the simulation by <paramref name="dt"/> seconds.</summary>
     public void Step(float dt)
     {
         ElapsedTime += dt;
@@ -162,9 +151,12 @@ public sealed class SimulationEngine
             cell.Velocity.X + RandF(-push, push) * dt,
             cell.Velocity.Y + RandF(-push, push) * dt);
         var angularPush = SimConstants.RandomAngularPushMax * turbMult;
-        cell.AngularVelocity += RandF(-angularPush, angularPush) * dt;
+        if (_rng.NextDouble() < SimConstants.RandomRotationUpdateChance)
+        {
+            cell.AngularVelocity += RandF(-angularPush, angularPush) * dt;
+        }
 
-        // Engine activation (player-controlled or autonomous)
+        // Movement is produced only by organelles and passive random impulses.
         ActivateEngines(cell, dt);
 
         // Integrate
@@ -239,7 +231,6 @@ public sealed class SimulationEngine
             {
                 Name      = $"{cell.Name}'",
                 Blueprint = cell.Blueprint,
-                IsPlayer  = false, // daughters are always autonomous
                 Position  = new Vec2(
                     Math.Clamp(cell.Position.X + offset.X, _cellHalfSize, ArenaWidth  - _cellHalfSize),
                     Math.Clamp(cell.Position.Y + offset.Y, _cellHalfSize, ArenaHeight - _cellHalfSize)),
@@ -259,6 +250,7 @@ public sealed class SimulationEngine
 
         // Re-evaluate sensors once per tick
         cell.SensorActive = EvaluateSensors(cell);
+        ActivateRotationEngine(cell);
     }
 
     private bool EvaluateSensors(CellState cell)
@@ -309,46 +301,10 @@ public sealed class SimulationEngine
         return false;
     }
 
-    /// <summary>
-    /// Activates movement organelles for a cell.
-    /// Player cells are steered by <see cref="PlayerInputDirection"/>; AI cells steer
-    /// autonomously using sensors and random activation.
-    /// </summary>
+    /// <summary>Activates forward movement organelles without external steering.</summary>
     private void ActivateEngines(CellState cell, float dt)
     {
-        Vec2 forward;
-
-        if (cell.IsPlayer)
-        {
-            var input = PlayerInputDirection;
-            if (input.LengthSq > 0.01f)
-            {
-                // Player-directed movement: steer toward input direction
-                var targetAngle = MathF.Atan2(input.Y, input.X) + MathF.PI * 0.5f;
-                cell.Rotation   = LerpAngle(cell.Rotation, targetAngle, dt * 5f);
-
-                // Apply a direct velocity impulse scaled the same as engine organelles
-                var speedBoost = _engineSpeed * SimConstants.PlayerSpeedMultiplier * dt;
-                cell.Velocity  = cell.Velocity + input.Normalized() * speedBoost;
-            }
-
-            // Player cells also benefit from their organelles firing autonomously
-            // (same probability as AI cells), so fall through to engine logic below.
-            forward = new Vec2(0f, -1f).Rotated(cell.Rotation);
-        }
-        else
-        {
-            // AI: steer toward nearest food
-            forward = new Vec2(0f, -1f).Rotated(cell.Rotation);
-            var nearest = FindNearestFood(cell.Position);
-            if (nearest.HasValue)
-            {
-                var dir         = (nearest.Value - cell.Position).Normalized();
-                var targetAngle = MathF.Atan2(dir.Y, dir.X) + MathF.PI * 0.5f;
-                cell.Rotation   = LerpAngle(cell.Rotation, targetAngle, dt * 3f);
-                forward         = new Vec2(0f, -1f).Rotated(cell.Rotation);
-            }
-        }
+        var forward = new Vec2(0f, -1f).Rotated(cell.Rotation);
 
         // Random Engine: 50% chance each T → per-frame probability
         if (cell.Blueprint.RandomEngineCount > 0 &&
@@ -381,6 +337,29 @@ public sealed class SimulationEngine
                 cell.Food    -= SimConstants.EngineFoodCost * cell.Blueprint.EngineCount;
             }
         }
+    }
+
+    /// <summary>
+    /// Activates Rotation Engines once per simulation tick. Sensor activation triggers
+    /// them deterministically; without a sensor they have a 50% fallback chance.
+    /// </summary>
+    private void ActivateRotationEngine(CellState cell)
+    {
+        var engineCount = cell.Blueprint.RotationEngineCount;
+        var torque = cell.Blueprint.RotationEngineTorque;
+        if (engineCount == 0 || torque == 0)
+        {
+            return;
+        }
+
+        var activate = cell.SensorActive || _rng.NextDouble() < 0.5;
+        if (!activate)
+        {
+            return;
+        }
+
+        cell.AngularVelocity += torque * SimConstants.RotationEngineImpulse;
+        cell.Food -= engineCount * SimConstants.RotationEngineFoodCost;
     }
 
     private void CollectFood(CellState cell, EnvironmentType env)
@@ -427,28 +406,6 @@ public sealed class SimulationEngine
         _foods.Add(pos);
     }
 
-    private Vec2? FindNearestFood(Vec2 origin)
-    {
-        if (_foods.Count == 0)
-        {
-            return null;
-        }
-
-        var best     = _foods[0];
-        var bestDist = origin.DistanceSq(best);
-        for (var i = 1; i < _foods.Count; i++)
-        {
-            var d = origin.DistanceSq(_foods[i]);
-            if (d < bestDist)
-            {
-                bestDist = d;
-                best     = _foods[i];
-            }
-        }
-
-        return best;
-    }
-
     // ── environment helpers ───────────────────────────────────────────────────
 
     private EnvironmentType GetEnvironment(Vec2 pos)
@@ -482,12 +439,6 @@ public sealed class SimulationEngine
         while (a >  MathF.PI) a -= MathF.PI * 2;
         while (a < -MathF.PI) a += MathF.PI * 2;
         return a;
-    }
-
-    private static float LerpAngle(float from, float to, float t)
-    {
-        var diff = WrapAngle(to - from);
-        return from + diff * Math.Clamp(t, 0f, 1f);
     }
 
     // ── result helpers ────────────────────────────────────────────────────────

@@ -5,7 +5,6 @@ using Godot;
 /// Godot rendering and input layer for the cell-biology simulation.
 /// All game rules and state live in <see cref="SimulationEngine"/>;
 /// this class is responsible only for:
-///   - reading player input and forwarding it to the engine
 ///   - drawing the arena, environment zones, food items, and cells
 ///   - managing the match timer and HUD
 /// </summary>
@@ -52,10 +51,6 @@ public partial class GameplaySimulation : Node2D
 		{
 			return;
 		}
-
-		// Forward player input to the engine before stepping
-		var rawInput = Input.GetVector("ui_left", "ui_right", "ui_up", "ui_down");
-		_engine.PlayerInputDirection = new Vec2(rawInput.X, rawInput.Y);
 
 		_engine.Step((float)delta);
 		UpdateHud();
@@ -133,7 +128,7 @@ public partial class GameplaySimulation : Node2D
 		// Player cell
 		var playerBlueprint = TryLoadPlayerBlueprint() ?? CellBlueprint.Default();
 		var playerPos = new Vec2(ArenaSize.X * 0.5f, ArenaSize.Y * 0.5f);
-		_playerCell   = _engine.CreateCell("Player", playerPos, playerBlueprint, isPlayer: true);
+		_playerCell   = _engine.CreateCell("Player", playerPos, playerBlueprint);
 		_cellColors[_playerCell] = new Color(0.35f, 0.75f, 1.0f);
 
 		// AI competitors
@@ -171,7 +166,8 @@ public partial class GameplaySimulation : Node2D
 		var pool = new[]
 		{
 			OrganelleType.RandomEngine, OrganelleType.EffectiveEngine,
-			OrganelleType.Engine, OrganelleType.Mitochondria,
+			OrganelleType.Engine, OrganelleType.RotationEngine,
+			OrganelleType.Mitochondria,
 			OrganelleType.FoodGradientDetector, OrganelleType.SlipperyMembrane
 		};
 

@@ -5,6 +5,7 @@
 - [x] **P0** Define the core rules, constants, organelles, match objective, and win conditions.
 - [x] **P0** Implement movement, drag, food collection, passive drain, death, and duplication.
 - [x] **P0** Implement pass-through cell interactions and passive random movement and rotation.
+- [x] **P0** Remove direct player/AI steering and add organelle-driven rotational control.
 - [x] **P0** Implement viscous, toxic, turbulent, and nutritious environments.
 - [x] **P0** Implement gradient fields and organelle activation.
 - [x] **P1** Extract the rules into a shared pure C# simulation library.

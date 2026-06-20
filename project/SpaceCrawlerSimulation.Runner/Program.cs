@@ -27,9 +27,7 @@ Console.WriteLine();
 
 var sim = new SimulationEngine(seed: seed);
 
-// ── reference cell (food-sensor + effective-engine blueprint, autonomously controlled) ──
-// Note: the console runner has no keyboard input; IsPlayer=false means the cell uses
-// the autonomous AI engine logic just like the AI competitors.
+// ── reference cell (food-sensor + effective-engine blueprint) ──────────────────
 var referenceGrid = new OrganelleType[16];
 foreach (var idx in CellBlueprint.NucleusIndices)
 {
@@ -41,7 +39,7 @@ referenceGrid[14] = OrganelleType.EffectiveEngine;
 referenceGrid[15] = OrganelleType.Mitochondria;
 var referenceBp = new CellBlueprint(referenceGrid);
 
-sim.CreateCell("Reference", new Vec2(SimConstants.ArenaWidth * 0.5f, SimConstants.ArenaHeight * 0.5f), referenceBp, isPlayer: false);
+sim.CreateCell("Reference", new Vec2(SimConstants.ArenaWidth * 0.5f, SimConstants.ArenaHeight * 0.5f), referenceBp);
 Console.WriteLine($"  Reference blueprint: {referenceBp.Describe()}");
 Console.WriteLine($"  Reference elements: {referenceBp.ElementCount}, duplicates at: {referenceBp.FoodForDuplication} food");
 
@@ -52,6 +50,7 @@ var aiOrganellePool = new[]
     OrganelleType.RandomEngine,
     OrganelleType.EffectiveEngine,
     OrganelleType.Engine,
+    OrganelleType.RotationEngine,
     OrganelleType.Mitochondria,
     OrganelleType.FoodGradientDetector,
     OrganelleType.SlipperyMembrane

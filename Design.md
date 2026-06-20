@@ -22,8 +22,11 @@ The full organelle catalogue is in [`notes/CELL_ELEMENTS.md`](notes/CELL_ELEMENT
 - A cell dies when its food reaches its negative survival limit. The base limit is -4, and each Mitochondria extends it by one.
 - Movement loses speed over time through drag.
 - Cells overlap and pass through each other without collision response.
-- Cells receive noticeable random movement and rotation impulses.
+- Cells receive passive random movement impulses.
+- Passive random rotation has double-strength angular force and occurs on 50% of simulation updates.
+- Cells receive no direct player input and no automatic AI steering toward food.
 - Movement organelles apply force outward from the nucleus.
+- Rotation Engines turn clockwise from the left half of the grid and counterclockwise from the right half.
 
 ## Scale and constants
 

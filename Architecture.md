@@ -9,7 +9,7 @@
 
 ### Godot client
 
-Located in `project/`. It owns scenes, input, rendering, navigation, and HUD behavior.
+Located in `project/`. It owns scenes, rendering, navigation, and HUD behavior. The simulation screen does not provide direct cell steering input.
 
 - `Menu.tscn` and `Scripts/UI/MenuScene.cs`: entry point and navigation.
 - `OrganismBuilder.tscn` and `Scripts/UI/`: organism builder and drag-and-drop controls.
@@ -46,6 +46,6 @@ slots before the next match.
 ## Design boundaries
 
 - Simulation rules belong in `SpaceCrawlerSimulation`, not in Godot scene scripts.
-- Godot scripts adapt simulation state for presentation and player input.
+- Godot scripts adapt simulation state for presentation; movement and rotation remain simulation-driven.
 - Numeric gameplay constants should remain centralized in `SimConstants.cs`.
 - The console runner should remain thin and must not implement separate rules.

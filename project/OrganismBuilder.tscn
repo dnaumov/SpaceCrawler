@@ -81,6 +81,12 @@ text = "Engine"
 script = ExtResource("2_sesxl")
 ComponentName = "Engine"
 
+[node name="RotationEngine" type="Label" parent="MarginContainer/RootColumn/Split/AvailablePanel/AvailableColumn/AvailableList"]
+layout_mode = 2
+text = "Rotation Engine"
+script = ExtResource("2_sesxl")
+ComponentName = "RotationEngine"
+
 [node name="Mitochondria" type="Label" parent="MarginContainer/RootColumn/Split/AvailablePanel/AvailableColumn/AvailableList"]
 layout_mode = 2
 text = "Mitochondria"

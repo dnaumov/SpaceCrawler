@@ -34,7 +34,10 @@ public static class SimConstants
     public const float RandomPushMax = 6f;
 
     /// <summary>Maximum random angular impulse applied per second (passive cell rotation).</summary>
-    public const float RandomAngularPushMax = 3f;
+    public const float RandomAngularPushMax = 6f;
+
+    /// <summary>Chance to apply passive random angular impulse during a simulation update.</summary>
+    public const double RandomRotationUpdateChance = 0.5;
 
     /// <summary>Angular drag (rad/s² loss per second).</summary>
     public const float AngularDrag = 1.5f;
@@ -56,6 +59,12 @@ public static class SimConstants
 
     /// <summary>Food cost for Engine activation.</summary>
     public const float EngineFoodCost = 3f;
+
+    /// <summary>Angular-velocity impulse produced by one Rotation Engine.</summary>
+    public const float RotationEngineImpulse = 2f;
+
+    /// <summary>Food cost for each Rotation Engine activation.</summary>
+    public const float RotationEngineFoodCost = 1f;
 
     /// <summary>Chloroplast produces 1 food every 40 seconds.</summary>
     public const float ChloroplastInterval = 40f;
@@ -81,10 +90,4 @@ public static class SimConstants
     /// <summary>Slippery Membrane drag reduction multiplier (halves drag).</summary>
     public const float SlipperyMembraneMultiplier = 0.5f;
 
-    /// <summary>
-    /// Direct-control speed multiplier for player cells.
-    /// The player's velocity impulse per frame = EngineSpeed × PlayerSpeedMultiplier × dt.
-    /// Tuned so player movement feels responsive at both console and pixel scales.
-    /// </summary>
-    public const float PlayerSpeedMultiplier = 10f;
 }

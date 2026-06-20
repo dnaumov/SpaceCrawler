@@ -11,6 +11,7 @@ public enum OrganelleType
     RandomEngine,
     EffectiveEngine,
     Engine,
+    RotationEngine,
 
     // Storage & energy
     Mitochondria,
@@ -37,6 +38,7 @@ public static class OrganelleTypeExtensions
         OrganelleType.RandomEngine          => "Random Engine",
         OrganelleType.EffectiveEngine       => "Eff. Engine",
         OrganelleType.Engine                => "Engine",
+        OrganelleType.RotationEngine        => "Rotation Engine",
         OrganelleType.Mitochondria          => "Mitochondria",
         OrganelleType.Chloroplast           => "Chloroplast",
         OrganelleType.Ribosome              => "Ribosome",
@@ -50,7 +52,8 @@ public static class OrganelleTypeExtensions
     };
 
     public static bool IsMovement(this OrganelleType t) =>
-        t is OrganelleType.RandomEngine or OrganelleType.EffectiveEngine or OrganelleType.Engine;
+        t is OrganelleType.RandomEngine or OrganelleType.EffectiveEngine
+            or OrganelleType.Engine or OrganelleType.RotationEngine;
 
     public static bool IsSensor(this OrganelleType t) =>
         t is OrganelleType.CellsGradientDetector or OrganelleType.FoodGradientDetector
@@ -72,6 +75,7 @@ public static class OrganelleTypeExtensions
             "Random Engine"  => OrganelleType.RandomEngine,
             "Eff. Engine"    => OrganelleType.EffectiveEngine,
             "Engine"         => OrganelleType.Engine,
+            "Rotation Engine" => OrganelleType.RotationEngine,
             "Mitochondria"   => OrganelleType.Mitochondria,
             "Chloroplast"    => OrganelleType.Chloroplast,
             "Ribosome"       => OrganelleType.Ribosome,

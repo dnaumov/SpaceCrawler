@@ -25,6 +25,9 @@ Builder usability, simulation feedback, and evolutionary balancing.
 - Increased passive random linear and rotational impulses so movement is visibly noticeable.
 - Added a **Restart in Builder** button that returns to the design screen without losing the current organism.
 - Removed cell-to-cell collision response; cells now overlap and pass through each other freely.
+- Removed keyboard steering and automatic nearest-food steering.
+- Doubled passive random rotation force while applying it on half of simulation updates.
+- Added the Rotation Engine with placement-based clockwise/counterclockwise torque.
 
 ### Console runner
 

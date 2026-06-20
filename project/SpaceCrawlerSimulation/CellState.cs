@@ -8,13 +8,6 @@ public sealed class CellState
     public Vec2 Velocity { get; set; }
     public float AngularVelocity { get; set; }
 
-    /// <summary>
-    /// When true the cell is controlled by the host application (e.g. keyboard in Godot).
-    /// The simulation engine skips autonomous engine activation for this cell and instead
-    /// uses <see cref="SimulationEngine.PlayerInputDirection"/>.
-    /// </summary>
-    public bool IsPlayer { get; set; }
-
     /// <summary>Current food reserve. Can go negative.</summary>
     public float Food { get; set; }
 

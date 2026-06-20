@@ -10,15 +10,18 @@ Organelle **orientation** is always *away from the nucleus* (pointing toward the
 
 ## Movement organelles
 
-Movement organelles have an orientation away from the nucleus and fire in that direction.
+Forward engines fire along the cell's current orientation. Rotation Engines apply torque based on which half of the grid contains them.
 
-| Organelle          | Serialised name     | Speed    | Food cost | Activation                                                |
-|--------------------|---------------------|----------|-----------|-----------------------------------------------------------|
-| **Random Engine**  | `RandomEngine`      | 2 speed  | 2 food    | Once per [T]. Activates with **50% chance** each [T].    |
-| **Eff. Engine**    | `EffectiveEngine`   | 1 speed  | 1 food    | Once per [T]. Needs a connected sensor; without one: 50% chance. |
-| **Engine**         | `Engine`            | 2 speed  | 3 food    | Once per [T]. Needs a connected sensor; without one: 50% chance. |
+| Organelle           | Serialised name      | Output        | Food cost | Activation                                                |
+|---------------------|----------------------|---------------|-----------|-----------------------------------------------------------|
+| **Random Engine**   | `RandomEngine`       | 2 speed       | 2 food    | Once per [T]. Activates with **50% chance** each [T].    |
+| **Eff. Engine**     | `EffectiveEngine`    | 1 speed       | 1 food    | Needs a connected sensor; without one: 50% chance.       |
+| **Engine**          | `Engine`             | 2 speed       | 3 food    | Needs a connected sensor; without one: 50% chance.       |
+| **Rotation Engine** | `RotationEngine`     | 2 angular impulse | 1 food | Once per [T]. Sensor-active, otherwise 50% chance.       |
 
-> **Trade-off summary**: Random Engine is cheap (2 food) but wastes impulse in random directions. Effective Engine gives the best food-efficiency ratio when paired with a sensor. Engine gives maximum speed when guided by a sensor but is costly to run unguided.
+> **Rotation direction**: Rotation Engines in grid columns 0-1 apply clockwise torque; columns 2-3 apply counterclockwise torque. Opposing engines cancel, but every activated engine still costs food.
+
+> **Trade-off summary**: Random Engine is cheap (2 food) but fires unpredictably. Effective Engine gives the best food-efficiency ratio when paired with a sensor. Engine gives maximum forward speed but is costly. Rotation Engine enables deliberate turning without direct player or AI steering.
 
 ---
 

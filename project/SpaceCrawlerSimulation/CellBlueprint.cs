@@ -52,6 +52,18 @@ public sealed class CellBlueprint
     public int RandomEngineCount    => Grid.Count(o => o == OrganelleType.RandomEngine);
     public int EffectiveEngineCount => Grid.Count(o => o == OrganelleType.EffectiveEngine);
     public int EngineCount          => Grid.Count(o => o == OrganelleType.Engine);
+    public int RotationEngineCount  => Grid.Count(o => o == OrganelleType.RotationEngine);
+
+    /// <summary>
+    /// Net rotational torque from Rotation Engine placement. Engines in columns 0-1
+    /// rotate clockwise; engines in columns 2-3 rotate counterclockwise.
+    /// Opposing engines cancel each other.
+    /// </summary>
+    public int RotationEngineTorque => Grid
+        .Select((organelle, index) => organelle == OrganelleType.RotationEngine
+            ? index % 4 < 2 ? 1 : -1
+            : 0)
+        .Sum();
 
     public bool HasFoodSensor =>
         Grid.Any(o => o is OrganelleType.FoodGradientDetector or OrganelleType.FoodVision);
