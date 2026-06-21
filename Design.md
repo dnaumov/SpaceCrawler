@@ -13,11 +13,14 @@ The player constructs a microorganism from modular organelles on a 4 x 4 grid an
 - Sensors may control movement organelles; selectable and inverse connections are planned.
 
 The full organelle catalogue is in [`notes/CELL_ELEMENTS.md`](notes/CELL_ELEMENTS.md).
+Runtime tuning is documented in [`notes/BALANCE_CONFIG.md`](notes/BALANCE_CONFIG.md).
 
 ## Match rules
 
 - Cells collect food by touching it.
-- A cell duplicates after collecting food equal to its element count; each Ribosome lowers the requirement by one.
+- A cell duplicates after accumulating biomass equal to its element count minus twice its Ribosome count (minimum 1).
+- Food and biomass are the same resource: pickups and Chloroplasts increase it, while metabolism and organelle activation consume it.
+- On duplication, the cell's biomass is split equally between parent and daughter.
 - Every 10 seconds, a cell passively consumes one food.
 - A cell dies when its food reaches its negative survival limit. The base limit is -4, and each Mitochondria extends it by one.
 - Movement loses speed over time through drag.
@@ -27,20 +30,32 @@ The full organelle catalogue is in [`notes/CELL_ELEMENTS.md`](notes/CELL_ELEMENT
 - Cells receive no direct player input and no automatic AI steering toward food.
 - Movement organelles apply force outward from the nucleus.
 - Rotation Engines turn clockwise from the left half of the grid and counterclockwise from the right half.
+- Each AI competitor may use its own JSON blueprint; absent or invalid configurations fall back to full-pool random generation.
+- The simulation advances at a fixed 60 updates per second, independent of rendering frame rate.
+- Forward engines attempt activation at most once every 10 seconds and pay food only when they activate.
+- Engines in sensor-equipped cells activate only when a sensor is aligned; the 50% random fallback applies only to cells without sensors.
+- Linear engine impulses use the strengthened 8/4/8 power values for Random, Effective, and standard Engines respectively; Rotation Engine torque is unchanged.
+- Each Slippery Membrane halves remaining drag, so multiple membranes stack multiplicatively.
+- Match ranking first compares copies produced, then remaining biomass.
 
 ## Scale and constants
+
+Balance values are loaded from `project/balance/environment.json` and the per-organelle
+files under `project/balance/organelles/`. The table below describes structural units;
+see the balance files for current tunable values.
 
 | Symbol | Value | Meaning |
 |---|---:|---|
 | T | 10 seconds | Simulation tick interval |
 | C | 1 food | Passive consumption per tick |
 | S | 16 pixels | Base visual size unit |
+| Simulation rate | 60 updates/second | Fixed deterministic update rate |
 
 ## Gradients
 
-At every simulation tick, the game recalculates food, cell-concentration, and toxic-environment gradients for each grid position. A contribution is inversely proportional to squared distance, with a small epsilon to prevent division by zero.
+Gradient directions are calculated on demand only when a cell's sensor is evaluated; the simulation does not maintain an arena-wide gradient grid. Each source contributes an inverse-distance-squared concentration, and the resulting spatial derivative points toward increasing concentration.
 
-Sensors compare their orientation with these gradients to decide whether connected movement organelles should activate.
+Each sensor faces outward according to its grid position, rotated with the cell. Gradient sensors activate when their facing direction is within 45 degrees of the increasing-concentration direction. Cell sensors exclude the sensing cell itself. Food Vision is evaluated separately and detects food within 8 S and a 30-degree forward cone.
 
 ## Environments
 

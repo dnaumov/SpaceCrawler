@@ -26,7 +26,7 @@ internal static class GeneticAlgorithmRunner
         Console.WriteLine("SpaceCrawler Genetic Algorithm");
         Console.WriteLine($"Generations: {generations} | Population: {populationSize} | " +
                           $"Match: {matchDuration:F0}s | Seed: {seed}");
-        Console.WriteLine("Fitness: surviving lineage, births, collected food, food reserve");
+        Console.WriteLine("Fitness: surviving lineage, births, biomass/fuel");
         Console.WriteLine();
 
         var population = Enumerable.Range(0, populationSize)
@@ -83,7 +83,7 @@ internal static class GeneticAlgorithmRunner
         float matchDuration,
         int seed)
     {
-        var simulation = new SimulationEngine(seed: seed);
+        var simulation = new SimulationEngine(seed: seed, balance: RunnerBalance.Current);
         var positionRng = new Random(unchecked(seed + 1));
 
         for (var index = 0; index < population.Count; index++)
@@ -109,13 +109,12 @@ internal static class GeneticAlgorithmRunner
             var alive = lineage.Count(cell => cell.Alive);
             var births = Math.Max(0, lineage.Count - 1);
             var duplications = lineage.Sum(cell => cell.DuplicationCount);
-            var collectedFood = lineage.Sum(cell => cell.FoodCollectedForDup);
             var foodReserve = lineage.Where(cell => cell.Alive).Sum(cell => cell.Food);
             var fitness = alive * 1_000.0 + births * 250.0 + duplications * 100.0 +
-                          collectedFood * 10.0 + foodReserve;
+                          foodReserve;
 
             yield return new EvaluatedGenome(
-                blueprint, fitness, alive, births, duplications, collectedFood, foodReserve);
+                blueprint, fitness, alive, births, duplications, foodReserve);
         }
     }
 
@@ -223,8 +222,7 @@ internal static class GeneticAlgorithmRunner
     {
         Console.WriteLine(
             $"#{rank}: fitness={genome.Fitness:F1}, alive={genome.AliveLineage}, " +
-            $"births={genome.Births}, collected={genome.CollectedFood}, " +
-            $"reserve={genome.FoodReserve:F1}");
+            $"births={genome.Births}, biomass={genome.FoodReserve:F1}");
         Console.WriteLine($"    {genome.Blueprint.Describe()}");
     }
 
@@ -262,6 +260,5 @@ internal static class GeneticAlgorithmRunner
         int AliveLineage,
         int Births,
         int Duplications,
-        int CollectedFood,
         float FoodReserve);
 }

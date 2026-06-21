@@ -21,6 +21,10 @@ Located in `project/SpaceCrawlerSimulation/`. This is a pure C# class library wi
 
 `SimulationEngine` is the authoritative implementation of match rules. Both the Godot client and console runner reference this library so they execute the same simulation.
 
+Runtime tuning is represented by `SimulationBalance`. Both front ends load the same
+`project/balance/environment.json` and per-organelle JSON files. Godot reads them from
+`res://balance`; the console project copies them beside its executable.
+
 ### Console runner
 
 Located in `project/SpaceCrawlerSimulation.Runner/`. It provides a thin command-line entry point for deterministic simulations and balancing runs.
@@ -43,9 +47,14 @@ With no additional arguments, genetic mode evaluates 20 competing genomes over
 selects parents by tournament, performs uniform crossover, and mutates organelle
 slots before the next match.
 
+Godot AI competitors may load individual blueprints from
+`res://ai_configs/ai_N.json`. Missing or invalid configurations fall back to random
+blueprints generated from the complete organelle pool. See
+[`notes/AI_CONFIGS.md`](notes/AI_CONFIGS.md).
+
 ## Design boundaries
 
 - Simulation rules belong in `SpaceCrawlerSimulation`, not in Godot scene scripts.
 - Godot scripts adapt simulation state for presentation; movement and rotation remain simulation-driven.
-- Numeric gameplay constants should remain centralized in `SimConstants.cs`.
+- Structural constants remain in `SimConstants.cs`; tunable gameplay values belong in `project/balance/`.
 - The console runner should remain thin and must not implement separate rules.

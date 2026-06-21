@@ -15,17 +15,20 @@ if (args.Length > 0 && args[0].Equals("genetic", StringComparison.OrdinalIgnoreC
 var matchDuration = args.Length >= 1 && float.TryParse(args[0], out var d) ? d : 120f;
 var aiCount       = args.Length >= 2 && int.TryParse(args[1], out var n)   ? n : 3;
 var seed          = args.Length >= 3 && int.TryParse(args[2], out var s)   ? s : 42;
+var balance       = RunnerBalance.Current;
+var environment   = balance.Environment;
 
 Console.WriteLine("╔══════════════════════════════════════════════════╗");
 Console.WriteLine("║           SpaceCrawler  Simulation               ║");
 Console.WriteLine("╚══════════════════════════════════════════════════╝");
 Console.WriteLine($"  Arena : {SimConstants.ArenaWidth}×{SimConstants.ArenaHeight} S-units");
 Console.WriteLine($"  Match : {matchDuration}s  |  AI cells: {aiCount}  |  Seed: {seed}");
-Console.WriteLine($"  Rules : T={SimConstants.TickInterval}s, C={SimConstants.PassiveFoodDrain}/T, " +
-                  $"death<{SimConstants.NegativeFoodBase} food");
+Console.WriteLine($"  Rules : {SimConstants.SimulationStepsPerSecond} fixed steps/s, " +
+                  $"T={environment.MetabolismInterval}s, C={environment.PassiveUpkeep}/T, " +
+                  $"death<{environment.BaseDeathThreshold} biomass");
 Console.WriteLine();
 
-var sim = new SimulationEngine(seed: seed);
+var sim = new SimulationEngine(seed: seed, balance: balance);
 
 // ── reference cell (food-sensor + effective-engine blueprint) ──────────────────
 var referenceGrid = new OrganelleType[16];
@@ -39,9 +42,9 @@ referenceGrid[14] = OrganelleType.EffectiveEngine;
 referenceGrid[15] = OrganelleType.Mitochondria;
 var referenceBp = new CellBlueprint(referenceGrid);
 
-sim.CreateCell("Reference", new Vec2(SimConstants.ArenaWidth * 0.5f, SimConstants.ArenaHeight * 0.5f), referenceBp);
+var referenceCell = sim.CreateCell("Reference", new Vec2(SimConstants.ArenaWidth * 0.5f, SimConstants.ArenaHeight * 0.5f), referenceBp);
 Console.WriteLine($"  Reference blueprint: {referenceBp.Describe()}");
-Console.WriteLine($"  Reference elements: {referenceBp.ElementCount}, duplicates at: {referenceBp.FoodForDuplication} food");
+Console.WriteLine($"  Reference elements: {referenceBp.ElementCount}, duplicates at: {referenceCell.BiomassThreshold:F1} biomass");
 
 // ── AI cells (random blueprints) ──────────────────────────────────────────────
 var rng = new Random(seed + 1);
@@ -79,7 +82,7 @@ for (var i = 0; i < aiCount; i++)
     var pos = new Vec2((float)rng.NextDouble() * SimConstants.ArenaWidth,
                        (float)rng.NextDouble() * SimConstants.ArenaHeight);
     var cell = sim.CreateCell($"AI-{i + 1}", pos, bp);
-    Console.WriteLine($"  AI-{i + 1} blueprint: {bp.Describe()} (dup@{bp.FoodForDuplication})");
+    Console.WriteLine($"  AI-{i + 1} blueprint: {bp.Describe()} (dup@{cell.BiomassThreshold:F1} biomass)");
 }
 
 Console.WriteLine();
@@ -102,7 +105,8 @@ while (elapsed < matchDuration && sim.AliveCellCount > 0)
     {
         nextReport += reportEvery;
         Console.WriteLine($"\n[t={elapsed:F0}s]  alive={sim.AliveCellCount}  food-items={sim.Foods.Count}");
-        foreach (var cell in sim.Cells.OrderByDescending(c => c.FoodCollectedForDup))
+        foreach (var cell in sim.Cells.OrderByDescending(c => c.DuplicationCount)
+                                      .ThenByDescending(c => c.Food))
         {
             if (!cell.Alive)
             {
@@ -110,7 +114,7 @@ while (elapsed < matchDuration && sim.AliveCellCount > 0)
                 continue;
             }
 
-            Console.WriteLine($"  {cell.Name,-10} food={cell.Food,6:F1}  dupFood={cell.FoodCollectedForDup}/{cell.Blueprint.FoodForDuplication}  dups={cell.DuplicationCount}  pos={cell.Position}");
+            Console.WriteLine($"  {cell.Name,-10} biomass={cell.Food,6:F1}/{cell.BiomassThreshold:F1}  dups={cell.DuplicationCount}  pos={cell.Position}");
         }
     }
 }
@@ -129,9 +133,8 @@ if (winner is null)
 else
 {
     Console.WriteLine($"🏆  Winner: {winner.Name}");
-    Console.WriteLine($"   Food reserve  : {winner.Food:F1}");
-    Console.WriteLine($"   Dup food coll : {winner.FoodCollectedForDup}");
-    Console.WriteLine($"   Duplications  : {winner.DuplicationCount}");
+    Console.WriteLine($"   Copies        : {winner.DuplicationCount}");
+    Console.WriteLine($"   Biomass/fuel  : {winner.Food:F1}");
     Console.WriteLine($"   Blueprint     : {winner.Blueprint.Describe()}");
 }
 
@@ -141,5 +144,7 @@ foreach (var cell in sim.Cells.OrderByDescending(c => c.DuplicationCount)
                                .ThenByDescending(c => c.Food))
 {
     var status = cell.Alive ? "alive" : "dead";
-    Console.WriteLine($"  {cell.Name,-10} {status,-5} dups={cell.DuplicationCount}  food={cell.Food:F1}  elements={cell.Blueprint.ElementCount}");
+    Console.WriteLine($"  {cell.Name,-10} {status,-5} copies={cell.DuplicationCount}  " +
+                      $"biomass={cell.Food:F1}  " +
+                      $"elements={cell.Blueprint.ElementCount}");
 }

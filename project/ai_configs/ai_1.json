@@ -1,0 +1,21 @@
+{
+  "grid_size": 4,
+  "components": [
+    "SlipperyMembrane",
+    "Chloroplast",
+    "Chloroplast",
+    "Chloroplast",
+    "Chloroplast",
+    "Nucleus",
+    "Nucleus",
+    "Chloroplast",
+    "Mitochondria",
+    "Nucleus",
+    "Nucleus",
+    "Mitochondria",
+    "Mitochondria",
+    "Ribosome",
+    "Ribosome",
+    "Ribosome"
+  ]
+}

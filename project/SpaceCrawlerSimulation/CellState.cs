@@ -11,8 +11,8 @@ public sealed class CellState
     /// <summary>Current food reserve. Can go negative.</summary>
     public float Food { get; set; }
 
-    /// <summary>Food items collected since last duplication.</summary>
-    public int FoodCollectedForDup { get; set; }
+    public float BiomassThreshold { get; set; }
+    public float DeathFoodThreshold { get; set; }
 
     /// <summary>Total duplications this cell has triggered.</summary>
     public int DuplicationCount { get; set; }
@@ -25,8 +25,9 @@ public sealed class CellState
     public float ChloroAccum { get; set; }
     public float SlipperyAccum { get; set; }
     public float ToxinAccum { get; set; }
+    public float EngineAccum { get; set; }
 
     public override string ToString() =>
-        $"{Name}: food={Food:F1}, dupFood={FoodCollectedForDup}/{Blueprint.FoodForDuplication}, " +
+        $"{Name}: biomass={Food:F1}/{BiomassThreshold:F1}, " +
         $"dups={DuplicationCount}, pos={Position}, alive={Alive}";
 }

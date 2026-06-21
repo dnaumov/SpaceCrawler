@@ -37,13 +37,8 @@ public sealed class CellBlueprint
 
     public int ElementCount => Grid.Count(o => o != OrganelleType.Empty);
 
-    /// <summary>Minimum food items to collect before the cell duplicates (adjusted by Ribosome).</summary>
-    public int FoodForDuplication => Math.Max(1, ElementCount - RibosomeCount);
-
-    /// <summary>Each Mitochondria extends the negative-food survival limit by 1.</summary>
+    /// <summary>Runtime effects are calculated by SimulationBalance in SimulationEngine.</summary>
     public int MitochondriaCount => Grid.Count(o => o == OrganelleType.Mitochondria);
-
-    public float DeathFoodThreshold => SimConstants.NegativeFoodBase - MitochondriaCount;
 
     public int RibosomeCount  => Grid.Count(o => o == OrganelleType.Ribosome);
     public int ChloroplastCount     => Grid.Count(o => o == OrganelleType.Chloroplast);

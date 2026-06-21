@@ -14,11 +14,17 @@ public partial class GameplaySimulation : Node2D
 	[Export] public float   MatchDuration     { get; set; } = 120.0f;
 	[Export] public Vector2 ArenaSize         { get; set; } = new(1152.0f, 648.0f);
 	[Export] public int     AiCompetitorCount { get; set; } = 3;
-	[Export] public float   FoodSpawnInterval { get; set; } = 0.8f;
-	[Export] public int     MaxFood           { get; set; } = 80;
 
 	// S = 16 pixels per simulation unit (console uses S = 1)
 	private const float UnitScale = 16.0f;
+	private const string PlayerConfigPath = "user://organism_config.json";
+	private const string AiConfigDirectory = "res://ai_configs";
+	private const string BalanceDirectory = "res://balance";
+
+	private static readonly OrganelleType[] AiOrganellePool = System.Enum
+		.GetValues<OrganelleType>()
+		.Where(type => type is not OrganelleType.Empty and not OrganelleType.Nucleus)
+		.ToArray();
 
 	private SimulationEngine _engine = null!;
 	private CellState?       _playerCell;
@@ -114,19 +120,18 @@ public partial class GameplaySimulation : Node2D
 	{
 		_matchEnded = false;
 		_cellColors.Clear();
+		var balance = LoadSimulationBalance();
 
 		// Create engine in pixel-space coordinates (unitScale=16 maps S-units to pixels)
 		_engine = new SimulationEngine(
 			arenaW:    ArenaSize.X,
 			arenaH:    ArenaSize.Y,
 			unitScale: UnitScale,
-			seed:      (int)_rng.Randi());
-
-		_engine.FoodSpawnInterval = FoodSpawnInterval;
-		_engine.MaxFood           = MaxFood;
+			seed:      (int)_rng.Randi(),
+			balance:   balance);
 
 		// Player cell
-		var playerBlueprint = TryLoadPlayerBlueprint() ?? CellBlueprint.Default();
+		var playerBlueprint = TryLoadBlueprint(PlayerConfigPath) ?? CellBlueprint.Default();
 		var playerPos = new Vec2(ArenaSize.X * 0.5f, ArenaSize.Y * 0.5f);
 		_playerCell   = _engine.CreateCell("Player", playerPos, playerBlueprint);
 		_cellColors[_playerCell] = new Color(0.35f, 0.75f, 1.0f);
@@ -139,11 +144,14 @@ public partial class GameplaySimulation : Node2D
 								ArenaSize.X - SimConstants.CellHalfSize * UnitScale * 2),
 				_rng.RandfRange(SimConstants.CellHalfSize * UnitScale * 2,
 								ArenaSize.Y - SimConstants.CellHalfSize * UnitScale * 2));
-			var cell = _engine.CreateCell($"AI {i + 1}", pos, GenerateAiBlueprint());
+			var configPath = $"{AiConfigDirectory}/ai_{i + 1}.json";
+			var blueprint = TryLoadBlueprint(configPath, warnOnInvalid: true)
+				?? GenerateRandomAiBlueprint();
+			var cell = _engine.CreateCell($"AI {i + 1}", pos, blueprint);
 			_cellColors[cell] = Color.FromHsv(_rng.Randf(), 0.65f, 0.95f);
 		}
 
-		_hudStatus.Text = "Collect food to duplicate. Survive the drain.";
+		_hudStatus.Text = "Accumulate biomass to duplicate. Survive the drain.";
 		_matchTimer.Stop();
 		_matchTimer.WaitTime = MatchDuration;
 		_matchTimer.OneShot  = true;
@@ -151,7 +159,7 @@ public partial class GameplaySimulation : Node2D
 		UpdateHud();
 	}
 
-	private CellBlueprint GenerateAiBlueprint()
+	private CellBlueprint GenerateRandomAiBlueprint()
 	{
 		var grid = new OrganelleType[16];
 		foreach (var idx in CellBlueprint.NucleusIndices)
@@ -163,19 +171,11 @@ public partial class GameplaySimulation : Node2D
 			.Where(i => !CellBlueprint.NucleusIndices.Contains(i))
 			.ToList();
 
-		var pool = new[]
-		{
-			OrganelleType.RandomEngine, OrganelleType.EffectiveEngine,
-			OrganelleType.Engine, OrganelleType.RotationEngine,
-			OrganelleType.Mitochondria,
-			OrganelleType.FoodGradientDetector, OrganelleType.SlipperyMembrane
-		};
-
 		var count = (int)_rng.RandiRange(2, 8);
 		for (var i = 0; i < count && freeSlots.Count > 0; i++)
 		{
 			var slotIdx   = (int)_rng.RandiRange(0, freeSlots.Count - 1);
-			var organelle = pool[(int)_rng.RandiRange(0, pool.Length - 1)];
+			var organelle = AiOrganellePool[(int)_rng.RandiRange(0, AiOrganellePool.Length - 1)];
 			grid[freeSlots[slotIdx]] = organelle;
 			freeSlots.RemoveAt(slotIdx);
 		}
@@ -202,7 +202,8 @@ public partial class GameplaySimulation : Node2D
 		}
 		else
 		{
-			var msg = $"Winner: {winner.Name}  (food={winner.Food:F1}, dups={winner.DuplicationCount})";
+			var msg = $"Winner: {winner.Name}  (copies={winner.DuplicationCount}, " +
+				$"biomass={winner.Food:F1})";
 			if (!string.IsNullOrEmpty(reason))
 			{
 				msg += $" — {reason}";
@@ -277,20 +278,21 @@ public partial class GameplaySimulation : Node2D
 		}
 
 		var standings = _engine.Cells
-			.OrderByDescending(c => c.FoodCollectedForDup)
+			.OrderByDescending(c => c.DuplicationCount)
 			.ThenByDescending(c => c.Food)
 			.ToList();
 
 		var lines = new System.Collections.Generic.List<string>
 		{
-            "Standings (dup-food / food-reserve):"
+			"Standings (copies / biomass):"
 		};
 
 		foreach (var cell in standings)
 		{
 			var suffix = cell.Alive ? string.Empty : " [DEAD]";
 			var color = GetRenderedCellColor(cell).ToHtml();
-			lines.Add($"[color=#{color}]- {cell.Name}: {cell.FoodCollectedForDup} / {cell.Food:F1} " +
+			lines.Add($"[color=#{color}]- {cell.Name}: {cell.DuplicationCount} / " +
+					  $"{cell.Food:F1} " +
 					  $"[{cell.Blueprint.ElementCount} elements]{suffix}[/color]");
 		}
 
@@ -333,9 +335,27 @@ public partial class GameplaySimulation : Node2D
 
 	// ── blueprint loading ─────────────────────────────────────────────────────
 
-	private static CellBlueprint? TryLoadPlayerBlueprint()
+	private static SimulationBalance LoadSimulationBalance()
 	{
-		const string path = "user://organism_config.json";
+		string Read(string path)
+		{
+			if (!FileAccess.FileExists(path))
+			{
+				return null;
+			}
+
+			using var file = FileAccess.Open(path, FileAccess.ModeFlags.Read);
+			return file?.GetAsText();
+		}
+
+		return SimulationBalance.Load(
+			Read($"{BalanceDirectory}/environment.json"),
+			type => Read($"{BalanceDirectory}/organelles/{type.SerializedName()}.json"),
+			message => GD.PushWarning(message));
+	}
+
+	private static CellBlueprint? TryLoadBlueprint(string path, bool warnOnInvalid = false)
+	{
 		if (!FileAccess.FileExists(path))
 		{
 			return null;
@@ -344,29 +364,49 @@ public partial class GameplaySimulation : Node2D
 		using var file = FileAccess.Open(path, FileAccess.ModeFlags.Read);
 		if (file is null)
 		{
+			if (warnOnInvalid)
+			{
+				GD.PushWarning($"Could not open AI configuration '{path}'. Using a random blueprint.");
+			}
 			return null;
 		}
 
 		var json = new Json();
 		if (json.Parse(file.GetAsText()) != Error.Ok)
 		{
+			if (warnOnInvalid)
+			{
+				GD.PushWarning($"Invalid JSON in AI configuration '{path}'. Using a random blueprint.");
+			}
 			return null;
 		}
 
 		if (json.Data.VariantType != Variant.Type.Dictionary)
 		{
+			if (warnOnInvalid)
+			{
+				GD.PushWarning($"AI configuration '{path}' must contain a JSON object. Using a random blueprint.");
+			}
 			return null;
 		}
 
 		var dict = json.Data.AsGodotDictionary();
 		if (!dict.ContainsKey("components"))
 		{
+			if (warnOnInvalid)
+			{
+				GD.PushWarning($"AI configuration '{path}' has no components array. Using a random blueprint.");
+			}
 			return null;
 		}
 
 		var arr = dict["components"].AsGodotArray();
 		if (arr.Count < 16)
 		{
+			if (warnOnInvalid)
+			{
+				GD.PushWarning($"AI configuration '{path}' has fewer than 16 components. Using a random blueprint.");
+			}
 			return null;
 		}
 

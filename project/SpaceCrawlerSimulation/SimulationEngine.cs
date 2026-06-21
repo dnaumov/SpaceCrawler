@@ -10,10 +10,11 @@
 public sealed class SimulationEngine
 {
     private readonly Random _rng;
+    private readonly SimulationBalance _balance;
+    private readonly EnvironmentBalance _environment;
     private readonly List<CellState> _cells = [];
     private readonly List<Vec2> _foods = [];
     private readonly List<EnvironmentZone> _zones;
-    private readonly GradientField _gradients;
 
     // Scaled physical constants (multiplied by unitScale in constructor)
     private readonly float _cellHalfSize;
@@ -23,16 +24,16 @@ public sealed class SimulationEngine
     private readonly float _randomEngineSpeed;
     private readonly float _effectiveEngineSpeed;
     private readonly float _engineSpeed;
+    private readonly float _foodVisionRange;
 
     public float ArenaWidth  { get; }
     public float ArenaHeight { get; }
     public float ElapsedTime { get; private set; }
-    public float FoodSpawnInterval { get; set; } = 0.8f;
-    public int   MaxFood           { get; set; } = 80;
+    public float FoodSpawnInterval { get; set; }
+    public int   MaxFood           { get; set; }
 
     private float _foodSpawnAccum;
-    private float _gradRecalcAccum;
-    private const float GradRecalcInterval = 0.5f;
+    private float _fixedStepAccum;
 
     public IReadOnlyList<CellState> Cells => _cells;
     public IReadOnlyList<Vec2>      Foods  => _foods;
@@ -48,22 +49,27 @@ public sealed class SimulationEngine
     public SimulationEngine(float arenaW     = SimConstants.ArenaWidth,
                             float arenaH     = SimConstants.ArenaHeight,
                             float unitScale  = 1f,
-                            int   seed       = 42)
+                            int   seed       = 42,
+                            SimulationBalance? balance = null)
     {
         ArenaWidth  = arenaW;
         ArenaHeight = arenaH;
         _rng        = new Random(seed);
+        _balance    = balance ?? SimulationBalance.Default();
+        _environment = _balance.Environment;
         _zones      = BuildDefaultZones(arenaW, arenaH);
-        _gradients  = new GradientField(arenaW, arenaH);
+        FoodSpawnInterval = Interval(_environment.FoodSpawnInterval);
+        MaxFood = Math.Max(0, _environment.MaxFood);
 
         // Scale all spatial constants by unitScale
         _cellHalfSize       = SimConstants.CellHalfSize       * unitScale;
         _foodHalfSize       = SimConstants.FoodHalfSize       * unitScale;
-        _dragBase           = SimConstants.DragBase           * unitScale;
-        _randomPushMax      = SimConstants.RandomPushMax      * unitScale;
-        _randomEngineSpeed  = SimConstants.RandomEngineSpeed  * unitScale;
-        _effectiveEngineSpeed = SimConstants.EffectiveEngineSpeed * unitScale;
-        _engineSpeed        = SimConstants.EngineSpeed        * unitScale;
+        _dragBase           = _environment.Drag * unitScale;
+        _randomPushMax      = _environment.RandomMovementPower * unitScale;
+        _randomEngineSpeed  = _environment.RandomEnginePower * unitScale;
+        _effectiveEngineSpeed = _environment.EffectiveEnginePower * unitScale;
+        _engineSpeed        = _environment.EnginePower * unitScale;
+        _foodVisionRange    = _environment.FoodVisionRange * unitScale;
     }
 
     // ── population management ─────────────────────────────────────────────────
@@ -76,7 +82,9 @@ public sealed class SimulationEngine
             Blueprint = blueprint,
             Position  = position,
             Rotation  = (float)(_rng.NextDouble() * MathF.PI * 2),
-            Food      = blueprint.ElementCount * 0.5f
+            Food      = blueprint.ElementCount * 0.5f,
+            BiomassThreshold = GetBiomassThreshold(blueprint),
+            DeathFoodThreshold = GetDeathFoodThreshold(blueprint)
         };
         _cells.Add(cell);
         return cell;
@@ -84,26 +92,36 @@ public sealed class SimulationEngine
 
     // ── main update ───────────────────────────────────────────────────────────
 
-    /// <summary>Advance the simulation by <paramref name="dt"/> seconds.</summary>
+    /// <summary>
+    /// Supply elapsed wall-clock time. Simulation state advances only in fixed-size
+    /// updates so results do not depend on rendering frame rate or caller step size.
+    /// </summary>
     public void Step(float dt)
+    {
+        if (dt <= 0f)
+        {
+            return;
+        }
+
+        _fixedStepAccum += dt;
+        while (_fixedStepAccum + 0.000001f >= SimConstants.FixedTimeStep)
+        {
+            _fixedStepAccum -= SimConstants.FixedTimeStep;
+            FixedStep(SimConstants.FixedTimeStep);
+        }
+    }
+
+    private void FixedStep(float dt)
     {
         ElapsedTime += dt;
 
         // Food spawning
         _foodSpawnAccum += dt;
-        while (_foodSpawnAccum >= FoodSpawnInterval)
+        var foodSpawnInterval = Interval(FoodSpawnInterval);
+        while (_foodSpawnAccum >= foodSpawnInterval)
         {
-            _foodSpawnAccum -= FoodSpawnInterval;
+            _foodSpawnAccum -= foodSpawnInterval;
             SpawnFood();
-        }
-
-        // Gradient recalculation
-        _gradRecalcAccum += dt;
-        if (_gradRecalcAccum >= GradRecalcInterval)
-        {
-            _gradRecalcAccum -= GradRecalcInterval;
-            var cellPositions = _cells.Select(c => (c.Position, c.Alive)).ToList();
-            _gradients.Recalculate(_foods, cellPositions, _zones);
         }
 
         // Update each cell
@@ -129,35 +147,34 @@ public sealed class SimulationEngine
 
         // Drag
         var dragMult = env == EnvironmentType.Viscous
-            ? SimConstants.ViscousDragMultiplier
+            ? _environment.ViscousDragMultiplier
             : 1f;
         if (cell.Blueprint.SlipperyMembraneCount > 0)
         {
-            dragMult *= SimConstants.SlipperyMembraneMultiplier;
+            dragMult *= MathF.Pow(
+                _environment.SlipperyMembraneDragMultiplier,
+                cell.Blueprint.SlipperyMembraneCount * Strength(OrganelleType.SlipperyMembrane));
         }
 
         var drag = _dragBase * dragMult;
         cell.Velocity        = cell.Velocity.MoveToward(Vec2.Zero, drag * dt);
         cell.AngularVelocity = MathF.CopySign(
-            Math.Max(0f, MathF.Abs(cell.AngularVelocity) - SimConstants.AngularDrag * dt),
+            Math.Max(0f, MathF.Abs(cell.AngularVelocity) - _environment.AngularDrag * dt),
             cell.AngularVelocity);
 
         // Passive random movement
         var turbMult = env == EnvironmentType.Turbulent
-            ? SimConstants.TurbulentMovementMultiplier
+            ? _environment.TurbulentMovementMultiplier
             : 1f;
         var push = _randomPushMax * turbMult;
         cell.Velocity = new Vec2(
             cell.Velocity.X + RandF(-push, push) * dt,
             cell.Velocity.Y + RandF(-push, push) * dt);
-        var angularPush = SimConstants.RandomAngularPushMax * turbMult;
-        if (_rng.NextDouble() < SimConstants.RandomRotationUpdateChance)
+        var angularPush = _environment.RandomRotationPower * turbMult;
+        if (_rng.NextDouble() < _environment.RandomRotationChance)
         {
             cell.AngularVelocity += RandF(-angularPush, angularPush) * dt;
         }
-
-        // Movement is produced only by organelles and passive random impulses.
-        ActivateEngines(cell, dt);
 
         // Integrate
         cell.Position = new Vec2(
@@ -172,9 +189,10 @@ public sealed class SimulationEngine
 
         // Tick accumulator (every T seconds)
         cell.TickAccum += dt;
-        if (cell.TickAccum >= SimConstants.TickInterval)
+        var metabolismInterval = Interval(_environment.MetabolismInterval);
+        if (cell.TickAccum >= metabolismInterval)
         {
-            cell.TickAccum -= SimConstants.TickInterval;
+            cell.TickAccum -= metabolismInterval;
             RunTick(cell);
         }
 
@@ -182,10 +200,14 @@ public sealed class SimulationEngine
         if (cell.Blueprint.ChloroplastCount > 0)
         {
             cell.ChloroAccum += dt;
-            if (cell.ChloroAccum >= SimConstants.ChloroplastInterval)
+            var chloroplastInterval = Interval(_environment.ChloroplastInterval);
+            if (cell.ChloroAccum >= chloroplastInterval)
             {
-                cell.ChloroAccum -= SimConstants.ChloroplastInterval;
-                cell.Food += cell.Blueprint.ChloroplastCount;
+                cell.ChloroAccum -= chloroplastInterval;
+                var produced = cell.Blueprint.ChloroplastCount *
+                               _environment.ChloroplastProduction *
+                               Strength(OrganelleType.Chloroplast);
+                cell.Food += produced;
             }
         }
 
@@ -193,10 +215,11 @@ public sealed class SimulationEngine
         if (cell.Blueprint.SlipperyMembraneCount > 0)
         {
             cell.SlipperyAccum += dt;
-            if (cell.SlipperyAccum >= SimConstants.SlipperyMembraneCostInterval)
+            var membraneInterval = Interval(_environment.SlipperyMembraneUpkeepInterval);
+            if (cell.SlipperyAccum >= membraneInterval)
             {
-                cell.SlipperyAccum -= SimConstants.SlipperyMembraneCostInterval;
-                cell.Food -= cell.Blueprint.SlipperyMembraneCount;
+                cell.SlipperyAccum -= membraneInterval;
+                cell.Food -= cell.Blueprint.SlipperyMembraneCount * Upkeep(OrganelleType.SlipperyMembrane);
             }
         }
 
@@ -204,24 +227,33 @@ public sealed class SimulationEngine
         if (cell.Blueprint.ToxinProducerCount > 0)
         {
             cell.ToxinAccum += dt;
-            if (cell.ToxinAccum >= SimConstants.ToxinProducerCostInterval)
+            var toxinInterval = Interval(_environment.ToxinProducerUpkeepInterval);
+            if (cell.ToxinAccum >= toxinInterval)
             {
-                cell.ToxinAccum -= SimConstants.ToxinProducerCostInterval;
-                cell.Food -= cell.Blueprint.ToxinProducerCount;
+                cell.ToxinAccum -= toxinInterval;
+                cell.Food -= cell.Blueprint.ToxinProducerCount * Upkeep(OrganelleType.ToxinProducer);
             }
         }
 
         // Death check
-        if (cell.Food <= cell.Blueprint.DeathFoodThreshold)
+        if (cell.Food <= cell.DeathFoodThreshold)
         {
             cell.Alive = false;
             return;
         }
 
-        // Duplication
-        if (cell.FoodCollectedForDup >= cell.Blueprint.FoodForDuplication)
+        // Forward engines attempt activation on their own explicit interval.
+        cell.EngineAccum += dt;
+        var engineInterval = Interval(_environment.EngineActivationInterval);
+        while (cell.EngineAccum >= engineInterval)
         {
-            cell.FoodCollectedForDup = 0;
+            cell.EngineAccum -= engineInterval;
+            ActivateEngines(cell);
+        }
+
+        // Duplication
+        if (cell.Food >= cell.BiomassThreshold)
+        {
             cell.DuplicationCount++;
 
             var offset = new Vec2(
@@ -235,7 +267,9 @@ public sealed class SimulationEngine
                     Math.Clamp(cell.Position.X + offset.X, _cellHalfSize, ArenaWidth  - _cellHalfSize),
                     Math.Clamp(cell.Position.Y + offset.Y, _cellHalfSize, ArenaHeight - _cellHalfSize)),
                 Rotation  = WrapAngle(cell.Rotation + MathF.PI),
-                Food      = cell.Food * 0.5f
+                Food      = cell.Food * 0.5f,
+                BiomassThreshold = cell.BiomassThreshold,
+                DeathFoodThreshold = cell.DeathFoodThreshold
             };
             cell.Food *= 0.5f;
             newCells.Add(daughter);
@@ -245,8 +279,8 @@ public sealed class SimulationEngine
     private void RunTick(CellState cell)
     {
         var env       = GetEnvironment(cell.Position);
-        var drainMult = env == EnvironmentType.Toxic ? SimConstants.ToxicDrainMultiplier : 1f;
-        cell.Food -= SimConstants.PassiveFoodDrain * drainMult;
+        var drainMult = env == EnvironmentType.Toxic ? _environment.ToxicUpkeepMultiplier : 1f;
+        cell.Food -= _environment.PassiveUpkeep * drainMult;
 
         // Re-evaluate sensors once per tick
         cell.SensorActive = EvaluateSensors(cell);
@@ -260,39 +294,97 @@ public sealed class SimulationEngine
             return false;
         }
 
-        if (cell.Blueprint.HasFoodSensor && _foods.Count > 0)
+        Vec2? foodGradient = null;
+        Vec2? cellGradient = null;
+        Vec2? toxicGradient = null;
+
+        for (var index = 0; index < cell.Blueprint.Grid.Length; index++)
         {
-            // Food gradient sensor: active when food gradient is non-negligible
-            var grad = _gradients.FoodGradAt(cell.Position, ArenaWidth, ArenaHeight);
-            if (grad > 0.001f)
+            var sensor = cell.Blueprint.Grid[index];
+            if (!sensor.IsSensor())
             {
-                return true;
+                continue;
             }
 
-            // Food vision: food directly in forward arc
-            var aheadPos = cell.Position + new Vec2(0f, -_cellHalfSize * 4f).Rotated(cell.Rotation);
-            foreach (var food in _foods)
+            var facing = SensorFacingDirection(index, cell.Rotation);
+            switch (sensor)
             {
-                if (food.DistanceSq(aheadPos) < (_cellHalfSize * 3f) * (_cellHalfSize * 3f))
-                {
-                    return true;
-                }
+                case OrganelleType.FoodGradientDetector:
+                    foodGradient ??= GradientField.DirectionAt(
+                        cell.Position, _foods, _cellHalfSize);
+                    if (IsAligned(facing, foodGradient.Value, sensor))
+                    {
+                        return true;
+                    }
+                    break;
+
+                case OrganelleType.CellsGradientDetector:
+                    cellGradient ??= GradientField.DirectionAt(
+                        cell.Position,
+                        _cells.Where(other => other.Alive && !ReferenceEquals(other, cell))
+                            .Select(other => other.Position),
+                        _cellHalfSize);
+                    if (IsAligned(facing, cellGradient.Value, sensor))
+                    {
+                        return true;
+                    }
+                    break;
+
+                case OrganelleType.ToxicGradientDetector:
+                    toxicGradient ??= GradientField.DirectionAt(
+                        cell.Position,
+                        _zones.Where(zone => zone.Type == EnvironmentType.Toxic)
+                            .Select(zone => new Vec2(zone.X + zone.W * 0.5f,
+                                                    zone.Y + zone.H * 0.5f)),
+                        _cellHalfSize);
+                    if (IsAligned(facing, toxicGradient.Value, sensor))
+                    {
+                        return true;
+                    }
+                    break;
+
+                case OrganelleType.FoodVision:
+                    if (CanSeeFood(cell.Position, facing))
+                    {
+                        return true;
+                    }
+                    break;
             }
         }
 
-        if (cell.Blueprint.HasCellSensor)
-        {
-            var grad = _gradients.CellGradAt(cell.Position, ArenaWidth, ArenaHeight);
-            if (grad > 0.001f)
-            {
-                return true;
-            }
-        }
+        return false;
+    }
 
-        if (cell.Blueprint.HasToxicSensor)
+    private static Vec2 SensorFacingDirection(int gridIndex, float cellRotation)
+    {
+        var column = gridIndex % 4;
+        var row = gridIndex / 4;
+        var outward = new Vec2(column - 1.5f, row - 1.5f).Normalized();
+        return outward.Rotated(cellRotation);
+    }
+
+    private bool IsAligned(Vec2 facing, Vec2 gradient, OrganelleType sensor)
+    {
+        var halfAngle = Math.Clamp(
+            _environment.SensorAlignmentDegrees * Strength(sensor), 0f, 180f);
+        var threshold = MathF.Cos(halfAngle * MathF.PI / 180f);
+        return gradient.LengthSq > 0f && Vec2.Dot(facing, gradient) >= threshold;
+    }
+
+    private bool CanSeeFood(Vec2 position, Vec2 facing)
+    {
+        var visionStrength = Strength(OrganelleType.FoodVision);
+        var range = _foodVisionRange * visionStrength;
+        var rangeSq = range * range;
+        var halfAngle = Math.Clamp(
+            _environment.FoodVisionHalfAngleDegrees * visionStrength, 0f, 180f);
+        var alignmentThreshold = MathF.Cos(halfAngle * MathF.PI / 180f);
+        foreach (var food in _foods)
         {
-            var grad = _gradients.ToxicGradAt(cell.Position, ArenaWidth, ArenaHeight);
-            if (grad > 0.001f)
+            var offset = food - position;
+            if (offset.LengthSq <= rangeSq &&
+                offset.LengthSq > 0f &&
+                Vec2.Dot(facing, offset.Normalized()) >= alignmentThreshold)
             {
                 return true;
             }
@@ -302,39 +394,45 @@ public sealed class SimulationEngine
     }
 
     /// <summary>Activates forward movement organelles without external steering.</summary>
-    private void ActivateEngines(CellState cell, float dt)
+    private void ActivateEngines(CellState cell)
     {
         var forward = new Vec2(0f, -1f).Rotated(cell.Rotation);
 
-        // Random Engine: 50% chance each T → per-frame probability
+        // Random Engine: 50% chance per activation interval.
         if (cell.Blueprint.RandomEngineCount > 0 &&
-            _rng.NextDouble() < 0.5 * dt / SimConstants.TickInterval)
+            _rng.NextDouble() < 0.5)
         {
-            cell.Velocity = cell.Velocity + forward * (_randomEngineSpeed * cell.Blueprint.RandomEngineCount);
-            cell.Food    -= SimConstants.RandomEngineFoodCost * cell.Blueprint.RandomEngineCount;
+            cell.Velocity = cell.Velocity + forward *
+                (_randomEngineSpeed * Strength(OrganelleType.RandomEngine) * cell.Blueprint.RandomEngineCount);
+            cell.Food -= Upkeep(OrganelleType.RandomEngine) * cell.Blueprint.RandomEngineCount;
         }
 
-        // Effective Engine: needs sensor or 50% chance
+        // Effective Engine: obey connected sensors; use 50% fallback only when
+        // the blueprint has no sensor at all.
         if (cell.Blueprint.EffectiveEngineCount > 0)
         {
-            var activate = cell.SensorActive ||
-                           _rng.NextDouble() < 0.5 * dt / SimConstants.TickInterval;
+            var activate = cell.Blueprint.HasSensor
+                ? cell.SensorActive
+                : _rng.NextDouble() < 0.5;
             if (activate)
             {
-                cell.Velocity = cell.Velocity + forward * (_effectiveEngineSpeed * cell.Blueprint.EffectiveEngineCount);
-                cell.Food    -= SimConstants.EffectiveEngineFoodCost * cell.Blueprint.EffectiveEngineCount;
+                cell.Velocity = cell.Velocity + forward *
+                    (_effectiveEngineSpeed * Strength(OrganelleType.EffectiveEngine) * cell.Blueprint.EffectiveEngineCount);
+                cell.Food -= Upkeep(OrganelleType.EffectiveEngine) * cell.Blueprint.EffectiveEngineCount;
             }
         }
 
-        // Engine: needs sensor or 50% chance
+        // Engine: obey connected sensors; use 50% fallback only without sensors.
         if (cell.Blueprint.EngineCount > 0)
         {
-            var activate = cell.SensorActive ||
-                           _rng.NextDouble() < 0.5 * dt / SimConstants.TickInterval;
+            var activate = cell.Blueprint.HasSensor
+                ? cell.SensorActive
+                : _rng.NextDouble() < 0.5;
             if (activate)
             {
-                cell.Velocity = cell.Velocity + forward * (_engineSpeed * cell.Blueprint.EngineCount);
-                cell.Food    -= SimConstants.EngineFoodCost * cell.Blueprint.EngineCount;
+                cell.Velocity = cell.Velocity + forward *
+                    (_engineSpeed * Strength(OrganelleType.Engine) * cell.Blueprint.EngineCount);
+                cell.Food -= Upkeep(OrganelleType.Engine) * cell.Blueprint.EngineCount;
             }
         }
     }
@@ -352,19 +450,22 @@ public sealed class SimulationEngine
             return;
         }
 
-        var activate = cell.SensorActive || _rng.NextDouble() < 0.5;
+        var activate = cell.Blueprint.HasSensor
+            ? cell.SensorActive
+            : _rng.NextDouble() < 0.5;
         if (!activate)
         {
             return;
         }
 
-        cell.AngularVelocity += torque * SimConstants.RotationEngineImpulse;
-        cell.Food -= engineCount * SimConstants.RotationEngineFoodCost;
+        cell.AngularVelocity += torque * _environment.RotationEnginePower *
+                                Strength(OrganelleType.RotationEngine);
+        cell.Food -= engineCount * Upkeep(OrganelleType.RotationEngine);
     }
 
     private void CollectFood(CellState cell, EnvironmentType env)
     {
-        var mult    = env == EnvironmentType.Nutritious ? SimConstants.NutritiousFoodMultiplier : 1f;
+        var mult    = env == EnvironmentType.Nutritious ? _environment.NutritiousFoodMultiplier : 1f;
         var touchSq = (_cellHalfSize + _foodHalfSize) * (_cellHalfSize + _foodHalfSize);
 
         for (var i = _foods.Count - 1; i >= 0; i--)
@@ -372,8 +473,7 @@ public sealed class SimulationEngine
             if (cell.Position.DistanceSq(_foods[i]) <= touchSq)
             {
                 _foods.RemoveAt(i);
-                cell.Food += 1f * mult;
-                cell.FoodCollectedForDup += 1;
+                cell.Food += mult;
             }
         }
     }
@@ -390,7 +490,7 @@ public sealed class SimulationEngine
         Vec2 pos;
         // Prefer nutritious zone for spawning (30% of the time)
         var nutriZone = _zones.FirstOrDefault(z => z.Type == EnvironmentType.Nutritious);
-        if (nutriZone is not null && _rng.NextDouble() < 0.3)
+        if (nutriZone is not null && _rng.NextDouble() < _environment.NutritiousFoodSpawnChance)
         {
             pos = new Vec2(
                 (float)(nutriZone.X + _rng.NextDouble() * nutriZone.W),
@@ -420,6 +520,25 @@ public sealed class SimulationEngine
 
         return EnvironmentType.Normal;
     }
+
+    private float Strength(OrganelleType type) =>
+        Math.Max(0f, _balance.For(type).StrengthCoefficient);
+
+    private float Upkeep(OrganelleType type) =>
+        Math.Max(0f, _balance.For(type).Upkeep);
+
+    private static float Interval(float value) =>
+        Math.Max(SimConstants.FixedTimeStep, value);
+
+    private float GetBiomassThreshold(CellBlueprint blueprint) =>
+        Math.Max(1f, blueprint.ElementCount -
+            blueprint.RibosomeCount * _environment.RibosomeThresholdReduction *
+            Strength(OrganelleType.Ribosome));
+
+    private float GetDeathFoodThreshold(CellBlueprint blueprint) =>
+        _environment.BaseDeathThreshold -
+        blueprint.MitochondriaCount * _environment.MitochondriaSurvivalBonus *
+        Strength(OrganelleType.Mitochondria);
 
     private static List<EnvironmentZone> BuildDefaultZones(float w, float h) =>
     [
@@ -451,7 +570,7 @@ public sealed class SimulationEngine
         }
 
         return _cells
-            .OrderByDescending(c => c.FoodCollectedForDup)
+            .OrderByDescending(c => c.DuplicationCount)
             .ThenByDescending(c => c.Food)
             .First();
     }

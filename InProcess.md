@@ -28,6 +28,31 @@ Builder usability, simulation feedback, and evolutionary balancing.
 - Removed keyboard steering and automatic nearest-food steering.
 - Doubled passive random rotation force while applying it on half of simulation updates.
 - Added the Rotation Engine with placement-based clockwise/counterclockwise torque.
+- Expanded random AI generation to every available organelle type.
+- Added separate `ai_N.json` blueprint loading for each AI with random fallback.
+- Added a benchmarked AI 1 baseline (22/30 wins and 28/30 survival across full-length seeded matches).
+- Added a pure-Chloroplast AI 2 configuration for comparison testing.
+- Updated winner selection and standings to prioritize copies, then collected food, then reserve.
+- Re-benchmarked both saved configurations under the copy-first ranking: AI 1 won 22/30
+  seeded matches versus random opponents and 21/30 direct comparison matches; AI 2 won
+  15/30 versus random opponents and 6/30 direct comparison matches.
+- Unified biomass and fuel into one resource. Food pickups and Chloroplasts increase it,
+  metabolism and active organelles consume it, and division splits it between cells.
+- Changed Ribosomes to reduce the duplication threshold by two, giving a net benefit
+  even when a Ribosome is added to an empty slot.
+- Made the simulation advance at a deterministic 60 fixed updates per second.
+- Limited forward engines to one activation attempt per 10-second interval, with food
+  charged only when an activation succeeds.
+- Replaced the arena-wide scalar gradient grid with on-demand direction calculations.
+- Made each gradient sensor compare its outward grid orientation with the gradient
+  direction, excluded self-detection from cell sensors, and separated Food Vision into
+  an 8 S, 30-degree forward-cone check.
+- Increased all linear engine impulses by four times while leaving Rotation Engine torque unchanged.
+- Made multiple Slippery Membranes halve drag multiplicatively instead of applying only one reduction.
+- Added shared runtime balance loading with one upkeep/strength JSON file per organelle
+  and an environment JSON for spawning, drag, timing, movement, sensors, and zone values.
+- Wired both Godot and the console runner to the same balance files with safe defaults
+  and warnings for missing or invalid configuration.
 
 ### Console runner
 

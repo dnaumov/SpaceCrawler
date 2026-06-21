@@ -14,14 +14,16 @@ Forward engines fire along the cell's current orientation. Rotation Engines appl
 
 | Organelle           | Serialised name      | Output        | Food cost | Activation                                                |
 |---------------------|----------------------|---------------|-----------|-----------------------------------------------------------|
-| **Random Engine**   | `RandomEngine`       | 2 speed       | 2 food    | Once per [T]. Activates with **50% chance** each [T].    |
-| **Eff. Engine**     | `EffectiveEngine`    | 1 speed       | 1 food    | Needs a connected sensor; without one: 50% chance.       |
-| **Engine**          | `Engine`             | 2 speed       | 3 food    | Needs a connected sensor; without one: 50% chance.       |
+| **Random Engine**   | `RandomEngine`       | 8 speed       | 2 food    | One attempt per [T], with a **50% chance** to activate.  |
+| **Eff. Engine**     | `EffectiveEngine`    | 4 speed       | 1 food    | One attempt per [T]; sensor-controlled, or 50% without one. |
+| **Engine**          | `Engine`             | 8 speed       | 3 food    | One attempt per [T]; sensor-controlled, or 50% without one. |
 | **Rotation Engine** | `RotationEngine`     | 2 angular impulse | 1 food | Once per [T]. Sensor-active, otherwise 50% chance.       |
 
 > **Rotation direction**: Rotation Engines in grid columns 0-1 apply clockwise torque; columns 2-3 apply counterclockwise torque. Opposing engines cancel, but every activated engine still costs food.
 
 > **Trade-off summary**: Random Engine is cheap (2 food) but fires unpredictably. Effective Engine gives the best food-efficiency ratio when paired with a sensor. Engine gives maximum forward speed but is costly. Rotation Engine enables deliberate turning without direct player or AI steering.
+
+> Forward engines consume food only when an interval-based activation succeeds; they never charge per rendering or simulation update. If the cell has a sensor, connected engines obey its result. The 50% random fallback is used only when the cell has no sensor.
 
 ---
 
@@ -31,9 +33,13 @@ Forward engines fire along the cell's current orientation. Rotation Engines appl
 |-----------------|------------------|---------------------------------------------------------------------|
 | **Mitochondria**| `Mitochondria`   | Allows the cell to survive 1 extra unit of negative food.          |
 | **Chloroplast** | `Chloroplast`    | Produces **1 food every 40 seconds** passively.                    |
-| **Ribosome**    | `Ribosome`       | Reduces the food-collection requirement for duplication by **1**.  |
+| **Ribosome**    | `Ribosome`       | Reduces the biomass requirement for duplication by **2**.          |
 
 > **Tip**: Multiple Mitochondria stack — a cell with 2 Mitochondria can survive down to −6 food before dying.
+
+---
+
+> **Biomass and fuel are the same resource**: Physical food and Chloroplast production increase it; metabolism and organelle activation reduce it. When a cell reaches its duplication threshold, its biomass is split equally between parent and daughter. Because a Ribosome occupies one grid slot but reduces the threshold by two, adding one to an empty slot still lowers the final requirement by one.
 
 ---
 
@@ -46,7 +52,11 @@ Sensory organelles have an orientation away from the nucleus. They can be **conn
 | **Food Sensor** (gradient)    | `FoodGradientDetector`   | Sensor direction is aligned with the food concentration gradient.           |
 | **Cell Sensor** (gradient)    | `CellsGradientDetector`  | Sensor direction is aligned with the cell-concentration gradient.           |
 | **Toxic Sensor** (gradient)   | `ToxicGradientDetector`  | Sensor direction is aligned with the toxic-environment gradient.            |
-| **Food Vision**               | `FoodVision`             | A food item is directly in front of the organelle (line-of-sight check).   |
+| **Food Vision**               | `FoodVision`             | Food is within 8 S and the organelle's 30-degree forward cone.              |
+
+Gradient directions are calculated only when sensors are evaluated. A gradient sensor
+activates when its outward-facing direction is within 45 degrees of increasing
+concentration. Food Vision is evaluated separately and does not use concentration.
 
 > **Note on connections**: In the current builder, sensors are automatically connected to all movement organelles on the same cell. Support for selecting individual connections and inverse links is planned for a future stage.
 
@@ -56,7 +66,7 @@ Sensory organelles have an orientation away from the nucleus. They can be **conn
 
 | Organelle            | Serialised name   | Effect                                                              | Cost                         |
 |----------------------|-------------------|---------------------------------------------------------------------|------------------------------|
-| **Slip. Membrane**   | `SlipperyMembrane`| Reduces drag by **2×** (stacks multiplicatively with environment).  | **1 food per 2 [T]** (20 s). |
+| **Slip. Membrane**   | `SlipperyMembrane`| Halves remaining drag; multiple membranes stack multiplicatively.   | **1 food per 2 [T]** (20 s). |
 | **Toxin Prod.**      | `ToxinProducer`   | Makes one surrounding grid position toxic each [T].                 | **1 food per 2 [T]** (20 s). |
 
 ---
