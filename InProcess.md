@@ -2,7 +2,7 @@
 
 ## Milestone
 
-Builder usability, simulation feedback, and evolutionary balancing.
+UI polish, player meta progression, and multi-input organelle logic.
 
 ## Session results
 
@@ -58,6 +58,8 @@ Builder usability, simulation feedback, and evolutionary balancing.
   independent inversion, backward-compatible JSON, and builder persistence controls.
 - Added an xUnit simulation test project covering validation, serialization, inversion,
   fan-out, and runtime activation edge cases.
+- Enabled nullable analysis for the Godot simulation screen and corrected optional
+  balance-file loading so the complete solution builds without warnings.
 
 ### Console runner
 
@@ -71,21 +73,30 @@ Builder usability, simulation feedback, and evolutionary balancing.
 - The complete Godot and .NET solution builds successfully with no errors.
 - The original console simulation mode runs successfully.
 - A full default 100-generation genetic run completes successfully.
-- Two existing nullable-annotation compiler warnings remain in `GameplaySimulation.cs`.
+- All 12 sensor-wiring unit tests pass.
+- The complete solution builds with zero warnings and zero errors.
 
 ## Session checkpoint
 
-This checkpoint includes the genetic runner, builder restart flow, saved-grid restoration, documentation updates, and pass-through cell behavior.
+This checkpoint includes explicit sensor-to-engine wiring, builder connection editing,
+backward-compatible blueprint persistence, edge-case tests, and warning-free builds.
 
 ## Next tasks
 
 - [ ] Test the restart-to-builder flow interactively in Godot.
+- [ ] Improve the Godot UI across the menu, builder, simulation HUD, and results flow.
+- [ ] Make organelle placement and connection wiring easier to understand through
+  clearer visual feedback, layout, and interaction states.
+- [ ] Design player meta progression: rewards, persistent currency/progress, organelle
+  unlocks, and how progression feeds back into organism building.
+- [ ] Add a Neuron organelle that accepts multiple signal inputs, combines them using
+  a clearly defined rule, and exposes an output that can drive organelles downstream.
+- [ ] Define Neuron graph validation, inversion behavior, serialization, builder UX,
+  runtime evaluation order, and tests before implementing chained signal networks.
 - [ ] Review and tune genetic fitness weights, mutation rate, population size, and match duration.
-- [ ] Add a visual interface for selecting sensor-to-engine connections.
-- [ ] Add inverse sensor links.
 - [ ] Define distinct AI species archetypes and representative blueprints.
-- [ ] Resolve the remaining nullable-annotation warnings.
 
 ## Next decision
 
-Decide whether genetic-mode winners should remain a balancing tool only or become a source of AI opponent blueprints used by the game.
+Choose the first meta-progression loop and define the Neuron's initial signal-combination
+rule so UI flows and data structures can be designed around concrete behavior.

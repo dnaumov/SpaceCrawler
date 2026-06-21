@@ -17,14 +17,25 @@
 - [x] **P0** Add builder controls for sensor-to-engine connections.
 - [x] **P1** Add unit tests for simulation wiring and edge cases.
 
-## Current milestone: Builder and opponents
+## Current milestone: UI and signal logic
 
-- [ ] **P1** Create distinct AI species archetypes and blueprints.
+- [ ] **P0** Improve the Godot menu, builder, simulation HUD, and results UI.
+- [ ] **P0** Improve organelle placement and connection-wiring feedback in the builder.
+- [ ] **P0** Define and implement a Neuron organelle that combines multiple signal inputs.
+- [ ] **P0** Add Neuron wiring validation, persistence, runtime evaluation, builder controls,
+  and unit tests for inversion, invalid graphs, and chained signals.
 - [ ] **P1** Add validation and feedback for organism builds.
 
-## Future milestone: Progression and polish
+## Next milestone: Player meta progression
 
-- [ ] **P1** Add points and organelle unlocks.
+- [ ] **P0** Define the reward loop and persistent player-progression data.
+- [ ] **P0** Add points or currency and organelle unlocks.
+- [ ] **P1** Surface rewards, unlocks, and progression choices in the Godot UI.
+- [ ] **P1** Add save migration and safe fallback for progression data.
+
+## Future milestone: Content and polish
+
+- [ ] **P1** Create distinct AI species archetypes and blueprints.
 - [ ] **P1** Add level and biome progression with different environments.
 - [ ] **P1** Add a results screen and balancing tools.
 - [ ] **P2** Improve organelle and environment visuals and effects.
