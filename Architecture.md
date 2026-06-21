@@ -52,9 +52,16 @@ Godot AI competitors may load individual blueprints from
 blueprints generated from the complete organelle pool. See
 [`notes/AI_CONFIGS.md`](notes/AI_CONFIGS.md).
 
+### Simulation tests
+
+`project/SpaceCrawlerSimulation.Tests/` is an xUnit project covering blueprint wiring
+validation, backward-compatible JSON parsing, serialization, fan-out, unique engine
+inputs, inversion, and per-engine runtime activation.
+
 ## Design boundaries
 
 - Simulation rules belong in `SpaceCrawlerSimulation`, not in Godot scene scripts.
 - Godot scripts adapt simulation state for presentation; movement and rotation remain simulation-driven.
 - Structural constants remain in `SimConstants.cs`; tunable gameplay values belong in `project/balance/`.
 - The console runner should remain thin and must not implement separate rules.
+- Sensor wiring is stored as directed `SensorConnection` edges in `CellBlueprint`.

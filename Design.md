@@ -10,7 +10,8 @@ The player constructs a microorganism from modular organelles on a 4 x 4 grid an
 - Grid positions 5, 6, 9, and 10 form the locked 2 x 2 nucleus.
 - The remaining positions may contain organelles or remain empty.
 - Directional organelles face outward from the nucleus.
-- Sensors may control movement organelles; selectable and inverse connections are planned.
+- Sensors connect to engines through explicit grid-slot wiring. A sensor may drive many
+  engines, each engine accepts one sensor input, and inversion is configured per output.
 
 The full organelle catalogue is in [`notes/CELL_ELEMENTS.md`](notes/CELL_ELEMENTS.md).
 Runtime tuning is documented in [`notes/BALANCE_CONFIG.md`](notes/BALANCE_CONFIG.md).
@@ -29,6 +30,8 @@ Runtime tuning is documented in [`notes/BALANCE_CONFIG.md`](notes/BALANCE_CONFIG
 - Passive random rotation has double-strength angular force and occurs on 50% of simulation updates.
 - Cells receive no direct player input and no automatic AI steering toward food.
 - Movement organelles apply force outward from the nucleus.
+- Effective, standard, and Rotation Engines use explicit sensor inputs when connected;
+  unconnected engines retain their 50% fallback. Random Engines cannot be connected.
 - Rotation Engines turn clockwise from the left half of the grid and counterclockwise from the right half.
 - Each AI competitor may use its own JSON blueprint; absent or invalid configurations fall back to full-pool random generation.
 - The simulation advances at a fixed 60 updates per second, independent of rendering frame rate.

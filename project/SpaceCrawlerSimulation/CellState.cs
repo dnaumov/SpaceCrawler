@@ -18,7 +18,8 @@ public sealed class CellState
     public int DuplicationCount { get; set; }
 
     public bool Alive { get; set; } = true;
-    public bool SensorActive { get; set; }
+    /// <summary>Most recently evaluated output for each grid slot.</summary>
+    public bool[] SensorOutputs { get; } = new bool[16];
 
     // Per-organelle timers
     public float TickAccum { get; set; }

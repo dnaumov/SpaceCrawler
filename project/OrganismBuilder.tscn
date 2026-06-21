@@ -364,6 +364,52 @@ size_flags_vertical = 3
 horizontal_alignment = 1
 vertical_alignment = 1
 
+[node name="ConnectionTitle" type="Label" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn"]
+layout_mode = 2
+text = "Sensor outputs"
+
+[node name="ConnectionHelp" type="Label" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn"]
+layout_mode = 2
+text = "Choose a sensor and engine. Connecting again replaces that engine's single input."
+autowrap_mode = 2
+
+[node name="ConnectionControls" type="HBoxContainer" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn"]
+layout_mode = 2
+
+[node name="SensorOption" type="OptionButton" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/ConnectionControls"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ArrowLabel" type="Label" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/ConnectionControls"]
+layout_mode = 2
+text = "->"
+
+[node name="EngineOption" type="OptionButton" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/ConnectionControls"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="InvertedCheck" type="CheckButton" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/ConnectionControls"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Inverted"
+
+[node name="ConnectButton" type="Button" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn/ConnectionControls"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Connect / Replace"
+
+[node name="ConnectionList" type="ItemList" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 90)
+layout_mode = 2
+
+[node name="RemoveConnectionButton" type="Button" parent="MarginContainer/RootColumn/Split/GridPanel/GridColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Remove selected connection"
+
 [node name="StatusLabel" type="Label" parent="MarginContainer/RootColumn"]
 unique_name_in_owner = true
 layout_mode = 2

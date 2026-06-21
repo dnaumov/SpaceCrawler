@@ -194,7 +194,7 @@ internal static class GeneticAlgorithmRunner
     }
 
     private static CellBlueprint Clone(CellBlueprint blueprint) =>
-        new((OrganelleType[])blueprint.Grid.Clone());
+        new((OrganelleType[])blueprint.Grid.Clone(), blueprint.Connections);
 
     private static OrganelleType[] CreateBaseGrid()
     {

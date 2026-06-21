@@ -49,10 +49,15 @@ Builder usability, simulation feedback, and evolutionary balancing.
   an 8 S, 30-degree forward-cone check.
 - Increased all linear engine impulses by four times while leaving Rotation Engine torque unchanged.
 - Made multiple Slippery Membranes halve drag multiplicatively instead of applying only one reduction.
+- Removed Slippery Membrane upkeep and benchmarked active builds with up to three stacked membranes.
 - Added shared runtime balance loading with one upkeep/strength JSON file per organelle
   and an environment JSON for spawning, drag, timing, movement, sensors, and zone values.
 - Wired both Godot and the console runner to the same balance files with safe defaults
   and warnings for missing or invalid configuration.
+- Added explicit sensor-to-engine edge wiring with sensor fan-out, one input per engine,
+  independent inversion, backward-compatible JSON, and builder persistence controls.
+- Added an xUnit simulation test project covering validation, serialization, inversion,
+  fan-out, and runtime activation edge cases.
 
 ### Console runner
 

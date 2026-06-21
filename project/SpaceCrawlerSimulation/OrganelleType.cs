@@ -55,6 +55,11 @@ public static class OrganelleTypeExtensions
         t is OrganelleType.RandomEngine or OrganelleType.EffectiveEngine
             or OrganelleType.Engine or OrganelleType.RotationEngine;
 
+    /// <summary>Random Engines remain intrinsically random and cannot accept sensor input.</summary>
+    public static bool AcceptsSensorInput(this OrganelleType t) =>
+        t is OrganelleType.EffectiveEngine or OrganelleType.Engine
+            or OrganelleType.RotationEngine;
+
     public static bool IsSensor(this OrganelleType t) =>
         t is OrganelleType.CellsGradientDetector or OrganelleType.FoodGradientDetector
             or OrganelleType.ToxicGradientDetector or OrganelleType.FoodVision;

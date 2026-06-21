@@ -281,18 +281,11 @@ public sealed class SimulationEngine
         var env       = GetEnvironment(cell.Position);
         var drainMult = env == EnvironmentType.Toxic ? _environment.ToxicUpkeepMultiplier : 1f;
         cell.Food -= _environment.PassiveUpkeep * drainMult;
-
-        // Re-evaluate sensors once per tick
-        cell.SensorActive = EvaluateSensors(cell);
-        ActivateRotationEngine(cell);
     }
 
-    private bool EvaluateSensors(CellState cell)
+    private void EvaluateSensorOutputs(CellState cell)
     {
-        if (!cell.Blueprint.HasSensor)
-        {
-            return false;
-        }
+        Array.Clear(cell.SensorOutputs);
 
         Vec2? foodGradient = null;
         Vec2? cellGradient = null;
@@ -307,52 +300,34 @@ public sealed class SimulationEngine
             }
 
             var facing = SensorFacingDirection(index, cell.Rotation);
-            switch (sensor)
+            cell.SensorOutputs[index] = sensor switch
             {
-                case OrganelleType.FoodGradientDetector:
-                    foodGradient ??= GradientField.DirectionAt(
-                        cell.Position, _foods, _cellHalfSize);
-                    if (IsAligned(facing, foodGradient.Value, sensor))
-                    {
-                        return true;
-                    }
-                    break;
-
-                case OrganelleType.CellsGradientDetector:
-                    cellGradient ??= GradientField.DirectionAt(
+                OrganelleType.FoodGradientDetector => IsAligned(
+                    facing,
+                    (foodGradient ??= GradientField.DirectionAt(
+                        cell.Position, _foods, _cellHalfSize)),
+                    sensor),
+                OrganelleType.CellsGradientDetector => IsAligned(
+                    facing,
+                    (cellGradient ??= GradientField.DirectionAt(
                         cell.Position,
                         _cells.Where(other => other.Alive && !ReferenceEquals(other, cell))
                             .Select(other => other.Position),
-                        _cellHalfSize);
-                    if (IsAligned(facing, cellGradient.Value, sensor))
-                    {
-                        return true;
-                    }
-                    break;
-
-                case OrganelleType.ToxicGradientDetector:
-                    toxicGradient ??= GradientField.DirectionAt(
+                        _cellHalfSize)),
+                    sensor),
+                OrganelleType.ToxicGradientDetector => IsAligned(
+                    facing,
+                    (toxicGradient ??= GradientField.DirectionAt(
                         cell.Position,
                         _zones.Where(zone => zone.Type == EnvironmentType.Toxic)
                             .Select(zone => new Vec2(zone.X + zone.W * 0.5f,
                                                     zone.Y + zone.H * 0.5f)),
-                        _cellHalfSize);
-                    if (IsAligned(facing, toxicGradient.Value, sensor))
-                    {
-                        return true;
-                    }
-                    break;
-
-                case OrganelleType.FoodVision:
-                    if (CanSeeFood(cell.Position, facing))
-                    {
-                        return true;
-                    }
-                    break;
-            }
+                        _cellHalfSize)),
+                    sensor),
+                OrganelleType.FoodVision => CanSeeFood(cell.Position, facing),
+                _ => false
+            };
         }
-
-        return false;
     }
 
     private static Vec2 SensorFacingDirection(int gridIndex, float cellRotation)
@@ -393,74 +368,64 @@ public sealed class SimulationEngine
         return false;
     }
 
-    /// <summary>Activates forward movement organelles without external steering.</summary>
+    /// <summary>Evaluates sensor outputs once, then activates each engine independently.</summary>
     private void ActivateEngines(CellState cell)
     {
+        EvaluateSensorOutputs(cell);
         var forward = new Vec2(0f, -1f).Rotated(cell.Rotation);
-
-        // Random Engine: 50% chance per activation interval.
-        if (cell.Blueprint.RandomEngineCount > 0 &&
-            _rng.NextDouble() < 0.5)
+        for (var slot = 0; slot < cell.Blueprint.Grid.Length; slot++)
         {
-            cell.Velocity = cell.Velocity + forward *
-                (_randomEngineSpeed * Strength(OrganelleType.RandomEngine) * cell.Blueprint.RandomEngineCount);
-            cell.Food -= Upkeep(OrganelleType.RandomEngine) * cell.Blueprint.RandomEngineCount;
-        }
-
-        // Effective Engine: obey connected sensors; use 50% fallback only when
-        // the blueprint has no sensor at all.
-        if (cell.Blueprint.EffectiveEngineCount > 0)
-        {
-            var activate = cell.Blueprint.HasSensor
-                ? cell.SensorActive
-                : _rng.NextDouble() < 0.5;
-            if (activate)
+            var engine = cell.Blueprint.Grid[slot];
+            if (engine == OrganelleType.RandomEngine)
             {
-                cell.Velocity = cell.Velocity + forward *
-                    (_effectiveEngineSpeed * Strength(OrganelleType.EffectiveEngine) * cell.Blueprint.EffectiveEngineCount);
-                cell.Food -= Upkeep(OrganelleType.EffectiveEngine) * cell.Blueprint.EffectiveEngineCount;
+                if (_rng.NextDouble() < 0.5)
+                {
+                    ApplyForwardEngine(cell, forward, engine, _randomEngineSpeed);
+                }
+                continue;
             }
-        }
 
-        // Engine: obey connected sensors; use 50% fallback only without sensors.
-        if (cell.Blueprint.EngineCount > 0)
-        {
-            var activate = cell.Blueprint.HasSensor
-                ? cell.SensorActive
-                : _rng.NextDouble() < 0.5;
-            if (activate)
+            if (!engine.AcceptsSensorInput() || !ShouldActivateEngine(cell, slot))
             {
-                cell.Velocity = cell.Velocity + forward *
-                    (_engineSpeed * Strength(OrganelleType.Engine) * cell.Blueprint.EngineCount);
-                cell.Food -= Upkeep(OrganelleType.Engine) * cell.Blueprint.EngineCount;
+                continue;
+            }
+
+            switch (engine)
+            {
+                case OrganelleType.EffectiveEngine:
+                    ApplyForwardEngine(cell, forward, engine, _effectiveEngineSpeed);
+                    break;
+                case OrganelleType.Engine:
+                    ApplyForwardEngine(cell, forward, engine, _engineSpeed);
+                    break;
+                case OrganelleType.RotationEngine:
+                    var torqueDirection = slot % 4 < 2 ? 1f : -1f;
+                    cell.AngularVelocity += torqueDirection * _environment.RotationEnginePower *
+                                            Strength(OrganelleType.RotationEngine);
+                    cell.Food -= Upkeep(OrganelleType.RotationEngine);
+                    break;
             }
         }
     }
 
-    /// <summary>
-    /// Activates Rotation Engines once per simulation tick. Sensor activation triggers
-    /// them deterministically; without a sensor they have a 50% fallback chance.
-    /// </summary>
-    private void ActivateRotationEngine(CellState cell)
+    private bool ShouldActivateEngine(CellState cell, int engineSlot)
     {
-        var engineCount = cell.Blueprint.RotationEngineCount;
-        var torque = cell.Blueprint.RotationEngineTorque;
-        if (engineCount == 0 || torque == 0)
+        if (!cell.Blueprint.TryGetEngineInput(engineSlot, out var input))
         {
-            return;
+            return _rng.NextDouble() < 0.5;
         }
 
-        var activate = cell.Blueprint.HasSensor
-            ? cell.SensorActive
-            : _rng.NextDouble() < 0.5;
-        if (!activate)
-        {
-            return;
-        }
+        return cell.SensorOutputs[input.SensorSlot] != input.Inverted;
+    }
 
-        cell.AngularVelocity += torque * _environment.RotationEnginePower *
-                                Strength(OrganelleType.RotationEngine);
-        cell.Food -= engineCount * Upkeep(OrganelleType.RotationEngine);
+    private void ApplyForwardEngine(
+        CellState cell,
+        Vec2 forward,
+        OrganelleType engine,
+        float basePower)
+    {
+        cell.Velocity += forward * (basePower * Strength(engine));
+        cell.Food -= Upkeep(engine);
     }
 
     private void CollectFood(CellState cell, EnvironmentType env)

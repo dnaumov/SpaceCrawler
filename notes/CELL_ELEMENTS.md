@@ -58,7 +58,9 @@ Gradient directions are calculated only when sensors are evaluated. A gradient s
 activates when its outward-facing direction is within 45 degrees of increasing
 concentration. Food Vision is evaluated separately and does not use concentration.
 
-> **Note on connections**: In the current builder, sensors are automatically connected to all movement organelles on the same cell. Support for selecting individual connections and inverse links is planned for a future stage.
+> **Connections**: Use the builder's Sensor Outputs panel to connect a sensor to one or
+> more Effective, standard, or Rotation Engines. Each engine accepts one input. Every
+> output can be inverted independently. Random Engines remain intrinsically random.
 
 ---
 
@@ -66,7 +68,7 @@ concentration. Food Vision is evaluated separately and does not use concentratio
 
 | Organelle            | Serialised name   | Effect                                                              | Cost                         |
 |----------------------|-------------------|---------------------------------------------------------------------|------------------------------|
-| **Slip. Membrane**   | `SlipperyMembrane`| Halves remaining drag; multiple membranes stack multiplicatively.   | **1 food per 2 [T]** (20 s). |
+| **Slip. Membrane**   | `SlipperyMembrane`| Halves remaining drag; multiple membranes stack multiplicatively.   | **No upkeep.**               |
 | **Toxin Prod.**      | `ToxinProducer`   | Makes one surrounding grid position toxic each [T].                 | **1 food per 2 [T]** (20 s). |
 
 ---

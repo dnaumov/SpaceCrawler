@@ -1,21 +1,28 @@
 {
   "grid_size": 4,
   "components": [
+    "Ribosome",
+    "FoodGradientDetector",
+    "EffectiveEngine",
+    "Ribosome",
+    "Ribosome",
+    "Nucleus",
+    "Nucleus",
+    "Ribosome",
+    "Chloroplast",
+    "Nucleus",
+    "Nucleus",
+    "Chloroplast",
+    "Chloroplast",
     "SlipperyMembrane",
-    "Chloroplast",
-    "Chloroplast",
-    "Chloroplast",
-    "Chloroplast",
-    "Nucleus",
-    "Nucleus",
-    "Chloroplast",
-    "Mitochondria",
-    "Nucleus",
-    "Nucleus",
-    "Mitochondria",
-    "Mitochondria",
-    "Ribosome",
-    "Ribosome",
-    "Ribosome"
+    "SlipperyMembrane",
+    "SlipperyMembrane"
+  ],
+  "connections": [
+    {
+      "sensor_slot": 1,
+      "engine_slot": 2,
+      "inverted": false
+    }
   ]
 }

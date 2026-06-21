@@ -13,11 +13,12 @@
 - [x] **P1** Add a configurable console simulation runner.
 - [x] **P1** Add genetic-algorithm balancing runs with selection, crossover, and mutation.
 - [x] **P1** Support per-AI JSON blueprints with complete-pool random fallback.
+- [x] **P0** Add sensor fan-out, single engine inputs, and independently inverted outputs.
+- [x] **P0** Add builder controls for sensor-to-engine connections.
+- [x] **P1** Add unit tests for simulation wiring and edge cases.
 
 ## Current milestone: Builder and opponents
 
-- [ ] **P0** Add a visual interface for selecting sensor-to-engine connections.
-- [ ] **P0** Add inverse sensor links.
 - [ ] **P1** Create distinct AI species archetypes and blueprints.
 - [ ] **P1** Add validation and feedback for organism builds.
 

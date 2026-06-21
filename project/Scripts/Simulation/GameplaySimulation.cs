@@ -1,6 +1,8 @@
 using System.Linq;
 using Godot;
 
+#nullable enable
+
 /// <summary>
 /// Godot rendering and input layer for the cell-biology simulation.
 /// All game rules and state live in <see cref="SimulationEngine"/>;
@@ -337,7 +339,7 @@ public partial class GameplaySimulation : Node2D
 
 	private static SimulationBalance LoadSimulationBalance()
 	{
-		string Read(string path)
+		string? Read(string path)
 		{
 			if (!FileAccess.FileExists(path))
 			{
@@ -371,56 +373,19 @@ public partial class GameplaySimulation : Node2D
 			return null;
 		}
 
-		var json = new Json();
-		if (json.Parse(file.GetAsText()) != Error.Ok)
+		try
+		{
+			return CellBlueprintJson.Deserialize(
+				file.GetAsText(),
+				message => GD.PushWarning($"Configuration '{path}': {message}"));
+		}
+		catch (System.Exception exception)
 		{
 			if (warnOnInvalid)
 			{
-				GD.PushWarning($"Invalid JSON in AI configuration '{path}'. Using a random blueprint.");
+				GD.PushWarning($"Invalid configuration '{path}': {exception.Message}. Using a random blueprint.");
 			}
 			return null;
 		}
-
-		if (json.Data.VariantType != Variant.Type.Dictionary)
-		{
-			if (warnOnInvalid)
-			{
-				GD.PushWarning($"AI configuration '{path}' must contain a JSON object. Using a random blueprint.");
-			}
-			return null;
-		}
-
-		var dict = json.Data.AsGodotDictionary();
-		if (!dict.ContainsKey("components"))
-		{
-			if (warnOnInvalid)
-			{
-				GD.PushWarning($"AI configuration '{path}' has no components array. Using a random blueprint.");
-			}
-			return null;
-		}
-
-		var arr = dict["components"].AsGodotArray();
-		if (arr.Count < 16)
-		{
-			if (warnOnInvalid)
-			{
-				GD.PushWarning($"AI configuration '{path}' has fewer than 16 components. Using a random blueprint.");
-			}
-			return null;
-		}
-
-		var grid = new OrganelleType[16];
-		for (var i = 0; i < 16; i++)
-		{
-			grid[i] = OrganelleTypeExtensions.FromSerializedName(arr[i].AsString());
-		}
-
-		foreach (var idx in CellBlueprint.NucleusIndices)
-		{
-			grid[idx] = OrganelleType.Nucleus;
-		}
-
-		return new CellBlueprint(grid);
 	}
 }

@@ -14,6 +14,7 @@
          recursive Compile glob; the simulation is consumed via ProjectReference. -->
     <Compile Remove="SpaceCrawlerSimulation/**/*.cs" />
     <Compile Remove="SpaceCrawlerSimulation.Runner/**/*.cs" />
+    <Compile Remove="SpaceCrawlerSimulation.Tests/**/*.cs" />
     <Compile Remove=".godot/**/*.cs" />
   </ItemGroup>
 </Project>
