@@ -1,0 +1,219 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1200" viewBox="0 0 1600 1200">
+  <defs>
+    <style>
+      :root {
+        --toxic: #7CFF00;
+        --purple: #D238FF;
+        --blue: #00D9FF;
+        --peach: #FFD1B8;
+        --teal: #00E0C6;
+        --bg: #07111D;
+        --tile: #101C2B;
+        --ink: #EAFBFF;
+      }
+      .bg { fill: var(--bg); }
+      .tile { fill: var(--tile); stroke: #254058; stroke-width: 4; }
+      .title { fill: var(--ink); font: 52px "Segoe UI", Arial, sans-serif; font-weight: 700; text-anchor: middle; }
+      .note { fill: #9EB8C4; font: 25px "Segoe UI", Arial, sans-serif; text-anchor: middle; }
+      .label { fill: #D8F6FF; font: 28px "Segoe UI", Arial, sans-serif; text-anchor: middle; }
+      .line { fill: none; stroke: var(--ink); stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; }
+      .thin { fill: none; stroke: var(--ink); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+      .purple { fill: var(--purple); }
+      .toxic { fill: var(--toxic); }
+      .blue { fill: var(--blue); }
+      .peach { fill: var(--peach); }
+      .teal { fill: var(--teal); }
+      .dark { fill: var(--bg); }
+      .softPurple { fill: var(--purple); opacity: .32; }
+      .softBlue { fill: var(--blue); opacity: .25; }
+      .softToxic { fill: var(--toxic); opacity: .28; }
+      .softTeal { fill: var(--teal); opacity: .28; }
+      .softPeach { fill: var(--peach); opacity: .32; }
+    </style>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#EAFBFF"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" width="1600" height="1200"/>
+  <text class="title" x="800" y="76">Space Crawler organelle icons — neon circular pass</text>
+  <text class="note" x="800" y="118">Active = purple core. Passive = peach core. Sensors = hollow center with antenna extensions.</text>
+
+  <!-- Common circular neon style, 7 x 2 grid -->
+
+  <g transform="translate(80 170)">
+    <rect class="tile" width="180" height="180" rx="28"/>
+    <circle class="softPeach" cx="90" cy="90" r="72" filter="url(#glow)"/>
+    <circle class="peach" cx="90" cy="90" r="54"/>
+    <circle class="teal" cx="90" cy="90" r="31"/>
+    <circle class="purple" cx="78" cy="79" r="11"/>
+    <circle class="blue" cx="102" cy="101" r="9"/>
+    <path class="thin" d="M52 90c17-35 62-42 86-9M48 112c31 22 71 18 93-10"/>
+    <text class="label" x="90" y="230">Nucleus</text>
+  </g>
+
+  <g transform="translate(300 170)">
+    <rect class="tile" width="180" height="180" rx="28"/>
+    <circle class="softPurple" cx="90" cy="90" r="70" filter="url(#glow)"/>
+    <circle class="teal" cx="90" cy="90" r="61"/>
+    <circle class="purple" cx="90" cy="90" r="39"/>
+    <circle class="dark" cx="90" cy="90" r="15"/>
+    <path class="line" d="M48 62l-23-18M134 65l26-14M45 119l-28 11M134 116l25 18"/>
+    <path class="toxic" d="M75 35l17-24 15 25-16 12zM131 88l28-11 3 29-25 3zM58 136l-20 21-12-27 22-10z"/>
+    <text class="label" x="90" y="230">Random Engine</text>
+  </g>
+
+  <g transform="translate(520 170)">
+    <rect class="tile" width="180" height="180" rx="28"/>
+    <circle class="softPurple" cx="90" cy="90" r="70" filter="url(#glow)"/>
+    <circle class="blue" cx="90" cy="90" r="61"/>
+    <circle class="purple" cx="90" cy="90" r="38"/>
+    <path class="dark" d="M36 90l57-34v68z"/>
+    <path class="toxic" d="M25 90l25-17v34z"/>
+    <path class="thin" d="M108 72h34M108 90h46M108 108h34" marker-end="url(#arrow)"/>
+    <text class="label" x="90" y="230">Effective Engine</text>
+  </g>
+
+  <g transform="translate(740 170)">
+    <rect class="tile" width="180" height="180" rx="28"/>
+    <circle class="softPurple" cx="90" cy="90" r="70" filter="url(#glow)"/>
+    <circle class="teal" cx="90" cy="90" r="61"/>
+    <circle class="purple" cx="90" cy="90" r="38"/>
+    <path class="dark" d="M39 90l45-38 55 38-55 38z"/>
+    <path class="blue" d="M27 90l30-24v48z"/>
+    <path class="thin" d="M102 90h42" marker-end="url(#arrow)"/>
+    <text class="label" x="90" y="230">Engine</text>
+  </g>
+
+  <g transform="translate(960 170)">
+    <rect class="tile" width="180" height="180" rx="28"/>
+    <circle class="softPurple" cx="90" cy="90" r="70" filter="url(#glow)"/>
+    <circle class="blue" cx="90" cy="90" r="61"/>
+    <circle class="purple" cx="90" cy="90" r="36"/>
+    <circle class="dark" cx="90" cy="90" r="18"/>
+    <path class="line" d="M59 78a36 36 0 0 1 53-23" marker-end="url(#arrow)"/>
+    <path class="line" d="M121 102a36 36 0 0 1-54 25" marker-end="url(#arrow)"/>
+    <circle class="toxic" cx="90" cy="34" r="8"/>
+    <circle class="toxic" cx="90" cy="146" r="8"/>
+    <text class="label" x="90" y="230">Rotation Engine</text>
+  </g>
+
+  <g transform="translate(1180 170)">
+    <rect class="tile" width="180" height="180" rx="28"/>
+    <circle class="softPeach" cx="90" cy="90" r="70" filter="url(#glow)"/>
+    <circle class="teal" cx="90" cy="90" r="61"/>
+    <circle class="peach" cx="90" cy="90" r="40"/>
+    <path class="thin" d="M62 77c16-18 39 19 56 1M62 101c16-18 39 19 56 1"/>
+    <path class="toxic" d="M126 44l13-18 12 19-14 8zM138 86l22-9 4 23-21 3z"/>
+    <text class="label" x="90" y="230">Mitochondria</text>
+  </g>
+
+  <g transform="translate(1400 170)">
+    <rect class="tile" width="180" height="180" rx="28"/>
+    <circle class="softPeach" cx="90" cy="90" r="70" filter="url(#glow)"/>
+    <circle class="toxic" cx="90" cy="90" r="61"/>
+    <circle class="peach" cx="90" cy="90" r="36"/>
+    <path class="teal" d="M73 107c2-39 42-57 64-28-30-2-42 17-64 28z"/>
+    <path class="blue" d="M54 105c5-32 31-47 50-34-18 8-27 24-50 34z"/>
+    <circle class="purple" cx="51" cy="48" r="14"/>
+    <text class="label" x="90" y="230">Chloroplast</text>
+  </g>
+
+  <g transform="translate(80 500)">
+    <rect class="tile" width="180" height="180" rx="28"/>
+    <circle class="softPeach" cx="90" cy="90" r="70" filter="url(#glow)"/>
+    <circle class="blue" cx="90" cy="90" r="61"/>
+    <circle class="peach" cx="90" cy="90" r="36"/>
+    <circle class="purple" cx="67" cy="76" r="8"/>
+    <circle class="purple" cx="90" cy="72" r="8"/>
+    <circle class="purple" cx="113" cy="76" r="8"/>
+    <path class="thin" d="M62 98h56M68 110l-18 21M90 112v29M112 110l18 21"/>
+    <circle class="teal" cx="49" cy="137" r="8"/>
+    <circle class="teal" cx="90" cy="144" r="8"/>
+    <circle class="teal" cx="131" cy="137" r="8"/>
+    <text class="label" x="90" y="230">Ribosome</text>
+  </g>
+
+  <g transform="translate(300 500)">
+    <rect class="tile" width="180" height="180" rx="28"/>
+    <circle class="softBlue" cx="90" cy="90" r="70" filter="url(#glow)"/>
+    <circle class="blue" cx="90" cy="90" r="62"/>
+    <circle class="dark" cx="90" cy="90" r="38"/>
+    <circle class="teal" cx="90" cy="90" r="17"/>
+    <path class="line" d="M61 61l-25-22M119 61l25-22M58 119l-25 22M122 119l25 22"/>
+    <circle class="purple" cx="28" cy="32" r="13"/>
+    <circle class="purple" cx="152" cy="32" r="13"/>
+    <circle class="purple" cx="28" cy="148" r="13"/>
+    <circle class="purple" cx="152" cy="148" r="13"/>
+    <text class="label" x="90" y="230">Cell Sensor</text>
+  </g>
+
+  <g transform="translate(520 500)">
+    <rect class="tile" width="180" height="180" rx="28"/>
+    <circle class="softBlue" cx="90" cy="90" r="70" filter="url(#glow)"/>
+    <circle class="teal" cx="90" cy="90" r="62"/>
+    <circle class="dark" cx="90" cy="90" r="39"/>
+    <path class="line" d="M90 51V24M129 90h27M90 129v27M51 90H24"/>
+    <circle class="peach" cx="90" cy="18" r="12"/>
+    <circle class="peach" cx="162" cy="90" r="12"/>
+    <circle class="peach" cx="90" cy="162" r="12"/>
+    <circle class="peach" cx="18" cy="90" r="12"/>
+    <circle class="toxic" cx="90" cy="90" r="13"/>
+    <text class="label" x="90" y="230">Food Sensor</text>
+  </g>
+
+  <g transform="translate(740 500)">
+    <rect class="tile" width="180" height="180" rx="28"/>
+    <circle class="softToxic" cx="90" cy="90" r="70" filter="url(#glow)"/>
+    <circle class="toxic" cx="90" cy="90" r="62"/>
+    <circle class="dark" cx="90" cy="90" r="39"/>
+    <path class="line" d="M61 61L36 36M119 61l25-25M90 129v31"/>
+    <circle class="purple" cx="31" cy="31" r="14"/>
+    <circle class="purple" cx="149" cy="31" r="14"/>
+    <path class="purple" d="M90 80l18 32H72z"/>
+    <path class="thin" d="M90 89v11"/>
+    <text class="label" x="90" y="230">Toxic Sensor</text>
+  </g>
+
+  <g transform="translate(960 500)">
+    <rect class="tile" width="180" height="180" rx="28"/>
+    <circle class="softBlue" cx="90" cy="90" r="70" filter="url(#glow)"/>
+    <ellipse class="blue" cx="90" cy="90" rx="66" ry="43"/>
+    <ellipse class="dark" cx="90" cy="90" rx="41" ry="25"/>
+    <circle class="purple" cx="90" cy="90" r="22"/>
+    <circle class="teal" cx="90" cy="90" r="10"/>
+    <circle class="peach" cx="83" cy="82" r="5"/>
+    <path class="thin" d="M31 90c18-42 99-42 118 0M31 90c18 42 99 42 118 0"/>
+    <text class="label" x="90" y="230">Food Vision</text>
+  </g>
+
+  <g transform="translate(1180 500)">
+    <rect class="tile" width="180" height="180" rx="28"/>
+    <circle class="softPurple" cx="90" cy="90" r="72" filter="url(#glow)"/>
+    <circle class="purple" cx="90" cy="90" r="63"/>
+    <circle class="peach" cx="90" cy="90" r="41"/>
+    <path class="thin" d="M43 76c25-30 72-35 95-7M42 110c31 27 77 27 103-1"/>
+    <path class="softBlue" d="M34 91c14-59 96-73 121-13-13 70-101 75-121 13z"/>
+    <text class="label" x="90" y="230">Slippery Membrane</text>
+  </g>
+
+  <g transform="translate(1400 500)">
+    <rect class="tile" width="180" height="180" rx="28"/>
+    <circle class="softToxic" cx="90" cy="90" r="74" filter="url(#glow)"/>
+    <path class="toxic" d="M90 15l15 30 30-16-7 34 35 5-26 24 26 24-35 5 7 34-30-16-15 30-15-30-30 16 7-34-35-5 26-24-26-24 35-5-7-34 30 16z"/>
+    <circle class="purple" cx="90" cy="90" r="45"/>
+    <circle class="dark" cx="90" cy="90" r="20"/>
+    <circle class="teal" cx="78" cy="80" r="7"/>
+    <circle class="teal" cx="105" cy="101" r="8"/>
+    <text class="label" x="90" y="230">Toxin Producer</text>
+  </g>
+
+  <text class="note" x="800" y="1110">Palette: toxic green, pinkish purple, neon blue, pale peach, teal. All icons use circular shells/cores for better UI consistency.</text>
+</svg>
