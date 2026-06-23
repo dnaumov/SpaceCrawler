@@ -10,8 +10,8 @@ The player constructs a microorganism from modular organelles on a 4 x 4 grid an
 - Grid positions 5, 6, 9, and 10 form the locked 2 x 2 nucleus.
 - The remaining positions may contain organelles or remain empty.
 - Directional organelles face outward from the nucleus.
-- Sensors connect to engines through explicit grid-slot wiring. A sensor may drive many
-  engines, each engine accepts one sensor input, and inversion is configured per output.
+- Sensors connect to engines and Toxin Producers through explicit grid-slot wiring. A sensor may drive many
+  targets, each target accepts one sensor input, and inversion is configured per output.
 
 The full organelle catalogue is in [`notes/CELL_ELEMENTS.md`](notes/CELL_ELEMENTS.md).
 Runtime tuning is documented in [`notes/BALANCE_CONFIG.md`](notes/BALANCE_CONFIG.md).
@@ -32,10 +32,16 @@ Runtime tuning is documented in [`notes/BALANCE_CONFIG.md`](notes/BALANCE_CONFIG
 - Movement organelles apply force outward from the nucleus.
 - Effective, standard, and Rotation Engines use explicit sensor inputs when connected;
   unconnected engines retain their 50% fallback. Random Engines cannot be connected.
+- Toxin Producers may use explicit sensor inputs. When unconnected, they stay constantly active.
+- Each active Toxin Producer consumes one food per T, makes its cell immune to toxic fields,
+  and projects a toxic aura around the cell. The aura radius is 2 S for one active producer
+  and grows by another 2 S for each additional active producer.
 - Rotation Engines turn clockwise from the left half of the grid and counterclockwise from the right half.
 - Each AI competitor may use its own JSON blueprint; absent or invalid configurations fall back to full-pool random generation.
 - The simulation advances at a fixed 60 updates per second, independent of rendering frame rate.
-- Forward engines attempt activation at most once every 10 seconds and pay food only when they activate.
+- Sensor-controlled and ordinary engines attempt activation once per second. Each activation
+  applies one tenth of the former impulse and upkeep, preserving comparable output over ten seconds.
+- Random Engines retain their ten-second activation interval and full-strength impulse and upkeep.
 - Engines in sensor-equipped cells activate only when a sensor is aligned; the 50% random fallback applies only to cells without sensors.
 - Linear engine impulses use the strengthened 8/4/8 power values for Random, Effective, and standard Engines respectively; Rotation Engine torque is unchanged.
 - Each Slippery Membrane halves remaining drag, so multiple membranes stack multiplicatively.
@@ -58,7 +64,7 @@ see the balance files for current tunable values.
 
 Gradient directions are calculated on demand only when a cell's sensor is evaluated; the simulation does not maintain an arena-wide gradient grid. Each source contributes an inverse-distance-squared concentration, and the resulting spatial derivative points toward increasing concentration.
 
-Each sensor faces outward according to its grid position, rotated with the cell. Gradient sensors activate when their facing direction is within 45 degrees of the increasing-concentration direction. Cell sensors exclude the sensing cell itself. Food Vision is evaluated separately and detects food within 8 S and a 30-degree forward cone.
+Each sensor faces outward according to its grid position, rotated with the cell. Gradient sensors activate when their facing direction is within 45 degrees of the increasing-concentration direction. Cell sensors exclude the sensing cell itself. Toxic sensors detect both static toxic fields and toxic auras from other cells; a cell's own aura is ignored for its own sensors so toxin producers do not self-latch. Food Vision is evaluated separately and detects food within 8 S and a 30-degree forward cone.
 
 ## Environments
 
@@ -68,7 +74,7 @@ An environment affects a cell when more than half of the cell is inside its zone
 |---|---|
 | Normal | No modifier |
 | Viscous | Doubles drag |
-| Toxic | Doubles passive food drain |
+| Toxic | Doubles passive food drain unless the cell has an active Toxin Producer |
 | Turbulent | Doubles random movement and rotation |
 | Nutritious | Doubles food gained from collection |
 

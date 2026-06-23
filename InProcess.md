@@ -41,8 +41,8 @@ UI polish, player meta progression, and multi-input organelle logic.
 - Changed Ribosomes to reduce the duplication threshold by two, giving a net benefit
   even when a Ribosome is added to an empty slot.
 - Made the simulation advance at a deterministic 60 fixed updates per second.
-- Limited forward engines to one activation attempt per 10-second interval, with food
-  charged only when an activation succeeds.
+- Changed sensor-controlled and ordinary engines to activate once per second at one tenth
+  force and fuel cost, while Random Engines retain ten-second full-strength activations.
 - Replaced the arena-wide scalar gradient grid with on-demand direction calculations.
 - Made each gradient sensor compare its outward grid orientation with the gradient
   direction, excluded self-detection from cell sensors, and separated Food Vision into

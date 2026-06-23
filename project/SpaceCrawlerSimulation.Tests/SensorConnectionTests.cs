@@ -36,6 +36,18 @@ public sealed class SensorConnectionTests
         ]));
     }
 
+    [Fact]
+    public void ToxinProducerAcceptsOneSensorInput()
+    {
+        var grid = GridWith(
+            (1, OrganelleType.ToxicGradientDetector),
+            (2, OrganelleType.ToxinProducer));
+
+        var blueprint = new CellBlueprint(grid, [new SensorConnection(1, 2)]);
+
+        Assert.Single(blueprint.Connections);
+    }
+
     [Theory]
     [InlineData(-1, 2)]
     [InlineData(1, 16)]

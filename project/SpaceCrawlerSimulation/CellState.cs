@@ -20,6 +20,8 @@ public sealed class CellState
     public bool Alive { get; set; } = true;
     /// <summary>Most recently evaluated output for each grid slot.</summary>
     public bool[] SensorOutputs { get; } = new bool[16];
+    /// <summary>Number of toxin producers currently active after sensor gating.</summary>
+    public int ActiveToxinProducerCount { get; set; }
 
     // Per-organelle timers
     public float TickAccum { get; set; }
@@ -27,6 +29,7 @@ public sealed class CellState
     public float SlipperyAccum { get; set; }
     public float ToxinAccum { get; set; }
     public float EngineAccum { get; set; }
+    public float RandomEngineAccum { get; set; }
 
     public override string ToString() =>
         $"{Name}: biomass={Food:F1}/{BiomassThreshold:F1}, " +

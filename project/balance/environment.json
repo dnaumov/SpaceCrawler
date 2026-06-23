@@ -9,7 +9,7 @@
   "metabolism_interval": 10.0,
   "passive_upkeep": 1.0,
   "base_death_threshold": -4.0,
-  "engine_activation_interval": 10.0,
+  "engine_activation_interval": 1.0,
   "chloroplast_interval": 40.0,
   "slippery_membrane_upkeep_interval": 20.0,
   "toxin_producer_upkeep_interval": 20.0,

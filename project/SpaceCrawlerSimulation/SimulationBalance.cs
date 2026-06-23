@@ -18,7 +18,7 @@ public sealed class EnvironmentBalance
     public float MetabolismInterval { get; set; } = 10f;
     public float PassiveUpkeep { get; set; } = 1f;
     public float BaseDeathThreshold { get; set; } = -4f;
-    public float EngineActivationInterval { get; set; } = 10f;
+    public float EngineActivationInterval { get; set; } = 1f;
     public float ChloroplastInterval { get; set; } = 40f;
     public float SlipperyMembraneUpkeepInterval { get; set; } = 20f;
     public float ToxinProducerUpkeepInterval { get; set; } = 20f;

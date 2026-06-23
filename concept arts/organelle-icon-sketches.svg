@@ -1,0 +1,169 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1200" viewBox="0 0 1600 1200">
+  <defs>
+    <style>
+      .bg { fill: #101923; }
+      .tile { fill: #eef3ea; stroke: #263441; stroke-width: 6; rx: 24; }
+      .ink { fill: none; stroke: #263441; stroke-width: 10; stroke-linecap: round; stroke-linejoin: round; }
+      .thin { fill: none; stroke: #263441; stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; }
+      .label { fill: #d8e2e5; font: 30px "Segoe UI", Arial, sans-serif; text-anchor: middle; }
+      .title { fill: #f4f7f1; font: 52px "Segoe UI", Arial, sans-serif; font-weight: 700; text-anchor: middle; }
+      .note { fill: #aab9bf; font: 25px "Segoe UI", Arial, sans-serif; text-anchor: middle; }
+      .teal { fill: #49c6bc; }
+      .cyan { fill: #67d5ff; }
+      .lime { fill: #8ee35a; }
+      .amber { fill: #f3ba4d; }
+      .violet { fill: #a98cf0; }
+      .magenta { fill: #f064a4; }
+      .slate { fill: #263441; }
+      .soft { opacity: 0.38; }
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#263441"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" width="1600" height="1200"/>
+  <text class="title" x="800" y="78">Space Crawler organelle icon sketches</text>
+  <text class="note" x="800" y="120">Vector-friendly first pass for builder/UI icons</text>
+
+  <!-- Tile helper layout: x=80,300,520,740,960,1180,1400; y=170,470 -->
+
+  <g transform="translate(80 170)">
+    <rect class="tile" width="180" height="180" rx="24"/>
+    <circle class="violet" cx="90" cy="90" r="58"/>
+    <circle class="cyan soft" cx="74" cy="75" r="26"/>
+    <circle class="amber" cx="104" cy="105" r="20"/>
+    <path class="ink" d="M50 91c20-45 78-50 95-8M46 117c34 22 75 19 102-11"/>
+    <text class="label" x="90" y="230">Nucleus</text>
+  </g>
+
+  <g transform="translate(300 170)">
+    <rect class="tile" width="180" height="180" rx="24"/>
+    <path class="slate" d="M56 64h58l22 28-22 28H56z"/>
+    <path class="amber" d="M38 76c-20-16-18-37 3-47-4 21 12 23 20 38z"/>
+    <path class="magenta" d="M36 108c-25 4-38-12-32-34 13 17 27 8 42 4z"/>
+    <path class="cyan" d="M42 126c-15 21 0 39 23 38-15-13-5-28 5-40z"/>
+    <circle class="teal" cx="98" cy="92" r="14"/>
+    <path class="thin" d="M126 78l22-13M130 102l28 9"/>
+    <text class="label" x="90" y="230">Random Engine</text>
+  </g>
+
+  <g transform="translate(520 170)">
+    <rect class="tile" width="180" height="180" rx="24"/>
+    <path class="slate" d="M48 66h70l24 24-24 24H48z"/>
+    <path class="cyan" d="M29 82c-18 9-18 27 0 36l30-18z"/>
+    <path class="lime" d="M70 78h37M70 101h50"/>
+    <path class="thin" d="M126 90h27" marker-end="url(#arrow)"/>
+    <text class="label" x="90" y="230">Effective Engine</text>
+  </g>
+
+  <g transform="translate(740 170)">
+    <rect class="tile" width="180" height="180" rx="24"/>
+    <path class="slate" d="M52 58h60l34 32-34 32H52z"/>
+    <path class="amber" d="M26 74c-23 10-23 42 0 52l39-26z"/>
+    <path class="thin" d="M72 80h32M72 100h46M72 120h32"/>
+    <text class="label" x="90" y="230">Engine</text>
+  </g>
+
+  <g transform="translate(960 170)">
+    <rect class="tile" width="180" height="180" rx="24"/>
+    <circle class="teal" cx="90" cy="90" r="44"/>
+    <circle class="bg" cx="90" cy="90" r="18"/>
+    <path class="ink" d="M56 85a40 40 0 0 1 59-31" marker-end="url(#arrow)"/>
+    <path class="ink" d="M125 96a40 40 0 0 1-60 30" marker-end="url(#arrow)"/>
+    <path class="thin" d="M90 38v18M90 124v18M38 90h18M124 90h18"/>
+    <text class="label" x="90" y="230">Rotation Engine</text>
+  </g>
+
+  <g transform="translate(1180 170)">
+    <rect class="tile" width="180" height="180" rx="24"/>
+    <path class="amber" d="M51 48c48-34 101 11 75 65-19 39-75 34-92-4C22 81 28 64 51 48z"/>
+    <path class="ink" d="M54 76c21-20 43 22 65 1M52 105c21-20 43 22 65 1"/>
+    <path class="thin" d="M132 49l17-18M146 75h24M137 101l20 14"/>
+    <text class="label" x="90" y="230">Mitochondria</text>
+  </g>
+
+  <g transform="translate(1400 170)">
+    <rect class="tile" width="180" height="180" rx="24"/>
+    <circle class="amber" cx="52" cy="52" r="20"/>
+    <path class="lime" d="M58 110c10-55 70-78 89-26-33-6-49 24-89 26z"/>
+    <path class="teal" d="M41 118c7-42 43-62 69-48-19 11-27 36-69 48z"/>
+    <path class="thin" d="M50 117c31-9 55-26 82-47M52 25v-14M31 34l-11-10M74 34l12-10"/>
+    <text class="label" x="90" y="230">Chloroplast</text>
+  </g>
+
+  <g transform="translate(80 500)">
+    <rect class="tile" width="180" height="180" rx="24"/>
+    <rect class="violet" x="48" y="58" width="84" height="64" rx="14"/>
+    <circle class="cyan" cx="64" cy="78" r="7"/>
+    <circle class="cyan" cx="90" cy="78" r="7"/>
+    <circle class="cyan" cx="116" cy="78" r="7"/>
+    <path class="thin" d="M56 104h68M68 122v22M90 122v30M112 122v22"/>
+    <circle class="amber" cx="68" cy="148" r="8"/>
+    <circle class="amber" cx="90" cy="156" r="8"/>
+    <circle class="amber" cx="112" cy="148" r="8"/>
+    <text class="label" x="90" y="230">Ribosome</text>
+  </g>
+
+  <g transform="translate(300 500)">
+    <rect class="tile" width="180" height="180" rx="24"/>
+    <path class="teal" d="M82 122h16l10 27H72z"/>
+    <circle class="cyan" cx="90" cy="80" r="22"/>
+    <circle class="violet" cx="55" cy="67" r="13"/>
+    <circle class="violet" cx="126" cy="67" r="13"/>
+    <path class="thin" d="M90 101v25M69 73c-17-15-36-15-49 1M111 73c17-15 36-15 49 1"/>
+    <text class="label" x="90" y="230">Cell Sensor</text>
+  </g>
+
+  <g transform="translate(520 500)">
+    <rect class="tile" width="180" height="180" rx="24"/>
+    <path class="teal" d="M82 124h16l10 25H72z"/>
+    <path class="ink" d="M90 120V68"/>
+    <circle class="lime" cx="90" cy="58" r="18"/>
+    <circle class="amber" cx="54" cy="78" r="10"/>
+    <circle class="amber" cx="128" cy="86" r="7"/>
+    <path class="thin" d="M60 118c22-18 42-18 62 0M42 102c35-28 65-28 99 0"/>
+    <text class="label" x="90" y="230">Food Sensor</text>
+  </g>
+
+  <g transform="translate(740 500)">
+    <rect class="tile" width="180" height="180" rx="24"/>
+    <path class="teal" d="M82 124h16l10 25H72z"/>
+    <path class="ink" d="M90 121V76"/>
+    <path class="magenta" d="M90 41l42 73H48z"/>
+    <path class="thin" d="M90 64v23M90 99v2"/>
+    <path class="thin" d="M35 78c-14 6-21 17-21 33M145 78c14 6 21 17 21 33"/>
+    <text class="label" x="90" y="230">Toxic Sensor</text>
+  </g>
+
+  <g transform="translate(960 500)">
+    <rect class="tile" width="180" height="180" rx="24"/>
+    <path class="cyan soft" d="M88 90l72-42v84z"/>
+    <ellipse class="violet" cx="72" cy="90" rx="42" ry="30"/>
+    <circle class="slate" cx="72" cy="90" r="13"/>
+    <circle class="cyan" cx="67" cy="85" r="5"/>
+    <circle class="amber" cx="142" cy="56" r="7"/>
+    <circle class="amber" cx="150" cy="96" r="9"/>
+    <text class="label" x="90" y="230">Food Vision</text>
+  </g>
+
+  <g transform="translate(1180 500)">
+    <rect class="tile" width="180" height="180" rx="24"/>
+    <path class="cyan soft" d="M35 91c21-58 91-65 119-14-17 77-103 77-119 14z"/>
+    <path class="ink" d="M39 90c18-48 82-55 106-11M38 111c39 32 83 29 111-10"/>
+    <path class="thin" d="M57 65c-14 3-23 14-26 28M124 50c13 5 21 14 27 28"/>
+    <text class="label" x="90" y="230">Slippery Membrane</text>
+  </g>
+
+  <g transform="translate(1400 500)">
+    <rect class="tile" width="180" height="180" rx="24"/>
+    <circle class="magenta soft" cx="90" cy="90" r="62"/>
+    <path class="magenta" d="M64 63c31-24 67 7 51 40-12 24-49 25-62-1-8-17-3-29 11-39z"/>
+    <circle class="lime" cx="82" cy="83" r="9"/>
+    <circle class="lime" cx="105" cy="93" r="7"/>
+    <path class="thin" d="M48 50c-20-12-37-5-45 11M130 52c22-9 37 2 45 19M44 130c-22 7-32 22-29 43M136 126c22 9 31 24 27 44"/>
+    <text class="label" x="90" y="230">Toxin Producer</text>
+  </g>
+
+  <text class="note" x="800" y="1110">Direction: final UI icons should be simplified into SVG/PNG states, preserving distinct silhouettes at 32px.</text>
+</svg>

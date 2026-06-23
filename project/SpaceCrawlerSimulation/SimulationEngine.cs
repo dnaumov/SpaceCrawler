@@ -9,6 +9,10 @@
 /// </summary>
 public sealed class SimulationEngine
 {
+    private const float ResponsiveEngineActivationScale = 0.1f;
+    private const float RandomEngineActivationInterval = 10f;
+    private const float ToxicAuraRadiusPerProducer = 2f;
+
     private readonly Random _rng;
     private readonly SimulationBalance _balance;
     private readonly EnvironmentBalance _environment;
@@ -25,6 +29,7 @@ public sealed class SimulationEngine
     private readonly float _effectiveEngineSpeed;
     private readonly float _engineSpeed;
     private readonly float _foodVisionRange;
+    private readonly float _toxicAuraRadiusPerProducer;
 
     public float ArenaWidth  { get; }
     public float ArenaHeight { get; }
@@ -70,6 +75,7 @@ public sealed class SimulationEngine
         _effectiveEngineSpeed = _environment.EffectiveEnginePower * unitScale;
         _engineSpeed        = _environment.EnginePower * unitScale;
         _foodVisionRange    = _environment.FoodVisionRange * unitScale;
+        _toxicAuraRadiusPerProducer = ToxicAuraRadiusPerProducer * unitScale;
     }
 
     // ── population management ─────────────────────────────────────────────────
@@ -122,6 +128,16 @@ public sealed class SimulationEngine
         {
             _foodSpawnAccum -= foodSpawnInterval;
             SpawnFood();
+        }
+
+        // Refresh toxin auras before the gameplay tick so toxicity, immunity, and
+        // toxic sensors use the latest sensor-gated producer state.
+        foreach (var cell in _cells)
+        {
+            if (cell.Alive)
+            {
+                UpdateToxinProducerActivity(cell);
+            }
         }
 
         // Update each cell
@@ -223,15 +239,15 @@ public sealed class SimulationEngine
             }
         }
 
-        // Toxin Producer upkeep
-        if (cell.Blueprint.ToxinProducerCount > 0)
+        // Active Toxin Producer upkeep
+        if (cell.ActiveToxinProducerCount > 0)
         {
             cell.ToxinAccum += dt;
             var toxinInterval = Interval(_environment.ToxinProducerUpkeepInterval);
             if (cell.ToxinAccum >= toxinInterval)
             {
                 cell.ToxinAccum -= toxinInterval;
-                cell.Food -= cell.Blueprint.ToxinProducerCount * Upkeep(OrganelleType.ToxinProducer);
+                cell.Food -= cell.ActiveToxinProducerCount * Upkeep(OrganelleType.ToxinProducer);
             }
         }
 
@@ -242,13 +258,24 @@ public sealed class SimulationEngine
             return;
         }
 
-        // Forward engines attempt activation on their own explicit interval.
+        // Responsive engines update frequently, but each activation uses one tenth
+        // of the former force and fuel so their ten-second output remains comparable.
         cell.EngineAccum += dt;
         var engineInterval = Interval(_environment.EngineActivationInterval);
-        while (cell.EngineAccum >= engineInterval)
+        while (cell.EngineAccum + 0.000001f >= engineInterval)
         {
-            cell.EngineAccum -= engineInterval;
-            ActivateEngines(cell);
+            cell.EngineAccum = Math.Max(0f, cell.EngineAccum - engineInterval);
+            ActivateResponsiveEngines(cell);
+        }
+
+        // Random Engines intentionally keep their slower, full-strength behavior.
+        cell.RandomEngineAccum += dt;
+        var randomEngineInterval = Interval(RandomEngineActivationInterval);
+        while (cell.RandomEngineAccum + 0.000001f >= randomEngineInterval)
+        {
+            cell.RandomEngineAccum = Math.Max(
+                0f, cell.RandomEngineAccum - randomEngineInterval);
+            ActivateRandomEngines(cell);
         }
 
         // Duplication
@@ -278,8 +305,9 @@ public sealed class SimulationEngine
 
     private void RunTick(CellState cell)
     {
-        var env       = GetEnvironment(cell.Position);
-        var drainMult = env == EnvironmentType.Toxic ? _environment.ToxicUpkeepMultiplier : 1f;
+        var drainMult = IsToxicFor(cell, cell.Position)
+            ? _environment.ToxicUpkeepMultiplier
+            : 1f;
         cell.Food -= _environment.PassiveUpkeep * drainMult;
     }
 
@@ -319,9 +347,7 @@ public sealed class SimulationEngine
                     facing,
                     (toxicGradient ??= GradientField.DirectionAt(
                         cell.Position,
-                        _zones.Where(zone => zone.Type == EnvironmentType.Toxic)
-                            .Select(zone => new Vec2(zone.X + zone.W * 0.5f,
-                                                    zone.Y + zone.H * 0.5f)),
+                        ToxicSensorSources(cell),
                         _cellHalfSize)),
                     sensor),
                 OrganelleType.FoodVision => CanSeeFood(cell.Position, facing),
@@ -369,23 +395,14 @@ public sealed class SimulationEngine
     }
 
     /// <summary>Evaluates sensor outputs once, then activates each engine independently.</summary>
-    private void ActivateEngines(CellState cell)
+    private void ActivateResponsiveEngines(CellState cell)
     {
         EvaluateSensorOutputs(cell);
         var forward = new Vec2(0f, -1f).Rotated(cell.Rotation);
         for (var slot = 0; slot < cell.Blueprint.Grid.Length; slot++)
         {
             var engine = cell.Blueprint.Grid[slot];
-            if (engine == OrganelleType.RandomEngine)
-            {
-                if (_rng.NextDouble() < 0.5)
-                {
-                    ApplyForwardEngine(cell, forward, engine, _randomEngineSpeed);
-                }
-                continue;
-            }
-
-            if (!engine.AcceptsSensorInput() || !ShouldActivateEngine(cell, slot))
+            if (!IsResponsiveEngine(engine) || !ShouldActivateEngine(cell, slot))
             {
                 continue;
             }
@@ -393,17 +410,35 @@ public sealed class SimulationEngine
             switch (engine)
             {
                 case OrganelleType.EffectiveEngine:
-                    ApplyForwardEngine(cell, forward, engine, _effectiveEngineSpeed);
+                    ApplyForwardEngine(
+                        cell, forward, engine, _effectiveEngineSpeed,
+                        ResponsiveEngineActivationScale);
                     break;
                 case OrganelleType.Engine:
-                    ApplyForwardEngine(cell, forward, engine, _engineSpeed);
+                    ApplyForwardEngine(
+                        cell, forward, engine, _engineSpeed,
+                        ResponsiveEngineActivationScale);
                     break;
                 case OrganelleType.RotationEngine:
                     var torqueDirection = slot % 4 < 2 ? 1f : -1f;
                     cell.AngularVelocity += torqueDirection * _environment.RotationEnginePower *
-                                            Strength(OrganelleType.RotationEngine);
-                    cell.Food -= Upkeep(OrganelleType.RotationEngine);
+                                            Strength(OrganelleType.RotationEngine) *
+                                            ResponsiveEngineActivationScale;
+                    cell.Food -= Upkeep(OrganelleType.RotationEngine) *
+                                 ResponsiveEngineActivationScale;
                     break;
+            }
+        }
+    }
+
+    private void ActivateRandomEngines(CellState cell)
+    {
+        var forward = new Vec2(0f, -1f).Rotated(cell.Rotation);
+        foreach (var engine in cell.Blueprint.Grid)
+        {
+            if (engine == OrganelleType.RandomEngine && _rng.NextDouble() < 0.5)
+            {
+                ApplyForwardEngine(cell, forward, engine, _randomEngineSpeed, 1f);
             }
         }
     }
@@ -418,14 +453,48 @@ public sealed class SimulationEngine
         return cell.SensorOutputs[input.SensorSlot] != input.Inverted;
     }
 
+    private void UpdateToxinProducerActivity(CellState cell)
+    {
+        if (cell.Blueprint.ToxinProducerCount == 0)
+        {
+            cell.ActiveToxinProducerCount = 0;
+            return;
+        }
+
+        EvaluateSensorOutputs(cell);
+
+        var active = 0;
+        for (var slot = 0; slot < cell.Blueprint.Grid.Length; slot++)
+        {
+            if (cell.Blueprint.Grid[slot] == OrganelleType.ToxinProducer &&
+                ShouldActivateToxinProducer(cell, slot))
+            {
+                active++;
+            }
+        }
+
+        cell.ActiveToxinProducerCount = active;
+    }
+
+    private bool ShouldActivateToxinProducer(CellState cell, int slot)
+    {
+        if (!cell.Blueprint.TryGetEngineInput(slot, out var input))
+        {
+            return true;
+        }
+
+        return cell.SensorOutputs[input.SensorSlot] != input.Inverted;
+    }
+
     private void ApplyForwardEngine(
         CellState cell,
         Vec2 forward,
         OrganelleType engine,
-        float basePower)
+        float basePower,
+        float activationScale)
     {
-        cell.Velocity += forward * (basePower * Strength(engine));
-        cell.Food -= Upkeep(engine);
+        cell.Velocity += forward * (basePower * Strength(engine) * activationScale);
+        cell.Food -= Upkeep(engine) * activationScale;
     }
 
     private void CollectFood(CellState cell, EnvironmentType env)
@@ -486,11 +555,68 @@ public sealed class SimulationEngine
         return EnvironmentType.Normal;
     }
 
+    private bool IsToxicFor(CellState cell, Vec2 pos) =>
+        !IsToxinImmune(cell) && IsToxicAt(pos, cell);
+
+    private static bool IsToxinImmune(CellState cell) =>
+        cell.ActiveToxinProducerCount > 0;
+
+    private bool IsToxicAt(Vec2 pos, CellState? ignoredAuraOwner = null)
+    {
+        if (GetEnvironment(pos) == EnvironmentType.Toxic)
+        {
+            return true;
+        }
+
+        foreach (var source in _cells)
+        {
+            if (!source.Alive ||
+                source.ActiveToxinProducerCount <= 0 ||
+                ReferenceEquals(source, ignoredAuraOwner))
+            {
+                continue;
+            }
+
+            var radius = source.ActiveToxinProducerCount *
+                         _toxicAuraRadiusPerProducer *
+                         Strength(OrganelleType.ToxinProducer);
+            if (source.Position.DistanceSq(pos) <= radius * radius)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private IEnumerable<Vec2> ToxicSensorSources(CellState sensingCell)
+    {
+        foreach (var zone in _zones.Where(zone => zone.Type == EnvironmentType.Toxic))
+        {
+            yield return new Vec2(zone.X + zone.W * 0.5f, zone.Y + zone.H * 0.5f);
+        }
+
+        foreach (var cell in _cells)
+        {
+            if (cell.Alive &&
+                cell.ActiveToxinProducerCount > 0 &&
+                !ReferenceEquals(cell, sensingCell))
+            {
+                yield return cell.Position;
+            }
+        }
+    }
+
     private float Strength(OrganelleType type) =>
         Math.Max(0f, _balance.For(type).StrengthCoefficient);
 
     private float Upkeep(OrganelleType type) =>
         Math.Max(0f, _balance.For(type).Upkeep);
+
+    private static bool IsResponsiveEngine(OrganelleType type) =>
+        type is OrganelleType.EffectiveEngine
+            or OrganelleType.Engine
+            or OrganelleType.RotationEngine;
 
     private static float Interval(float value) =>
         Math.Max(SimConstants.FixedTimeStep, value);
