@@ -26,6 +26,7 @@ project/.vs/
 *.tmp
 *.pdb
 *.cache
+builds/
 
 # User-specific files
 *.rsuser
